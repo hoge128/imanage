@@ -1,2 +1,0 @@
-tomli
-python-xmp-toolkit

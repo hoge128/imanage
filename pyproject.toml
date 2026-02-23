@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "imanage"
+version = "1.0.0"
+description = "A tool to organize JPG and RAW files."
+dependencies = [
+    "tomli",
+    "python-xmp-toolkit",
+    "pyinstaller"
+]
+requires-python = ">=3.10"
+
+[project.scripts]
+imanage = "imanage.core:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

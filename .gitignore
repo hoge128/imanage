@@ -5,3 +5,4 @@ conf.egg-info/
 src/
 conf/
 tools/
+build/
