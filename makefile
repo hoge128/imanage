@@ -1,29 +1,84 @@
 # Makefile
-APP_NAME = imanage
-VERSION  = 1.0.0
-DIST_DIR = dist
-BIN_DIR  = ~/.local/bin
+APP_NAME   = imanage
+VERSION    := $(shell python3 -m setuptools_scm 2>/dev/null || grep '^version' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+DIST_DIR   = dist
+BIN_DIR    = ~/.local/bin
+CONFIG_DIR = ~/.config/$(APP_NAME)
+CONFIG_SRC = src/$(APP_NAME)/config.toml
+CONFIG_DST = $(CONFIG_DIR)/config.toml
+VENV       = .venv
+PYTHON     = $(VENV)/bin/python3
+PIP        = $(VENV)/bin/pip
 
 # --- タスク定義 -------------------------
 
-.PHONY: all build install clean
+.PHONY: all build install clean setup
 
 # ビルド一括処理
 all: clean build install
 
+# venv セットアップ
+setup:
+	python3 -m venv $(VENV)
+	$(PIP) install --upgrade pip
+	$(PIP) install -e .
+
 # ビルド (PyInstaller)
-build:
+build: setup
 	@echo "=== Building $(APP_NAME) ==="
-	pyinstaller --onefile src/imanage/core.py --name $(APP_NAME)-$(VERSION)
+	$(VENV)/bin/pyinstaller --onefile src/imanage/core.py --name $(APP_NAME)-$(VERSION) \
+		--specpath build \
+		--hidden-import=PIL \
+		--hidden-import=PIL.Image \
+		--hidden-import=PIL.JpegImagePlugin \
+		--hidden-import=libxmp \
+		--hidden-import=libxmp.utils \
+		--hidden-import=tomllib \
+		--hidden-import=tomli \
+		--add-data "src/imanage/config.toml:imanage" \
+		--paths src
 	@echo "Build finished: $(DIST_DIR)/$(APP_NAME)-$(VERSION)"
 
-# インストール (binへコピー)
+# インストール (binへコピー + 設定ファイル配置)
 install:
 	@echo "=== Installing $(APP_NAME) ==="
 	ln -sf $(abspath $(DIST_DIR)/$(APP_NAME)-$(VERSION)) $(BIN_DIR)/$(APP_NAME)
 	@echo "Installed successfully: $(BIN_DIR)/$(APP_NAME)"
+	@mkdir -p $(CONFIG_DIR)
+	@if [ ! -f $(CONFIG_DST) ]; then \
+		cp $(CONFIG_SRC) $(CONFIG_DST); \
+		echo "Config installed: $(CONFIG_DST)"; \
+	else \
+		echo "Config already exists (skipped): $(CONFIG_DST)"; \
+	fi
 
 # クリーンアップ
 clean:
 	@echo "=== Cleaning build files ==="
 	rm -rf build $(DIST_DIR) *.spec
+
+# --- テスト -------------------------
+
+TEST_DIR = $(abspath test)
+TEST_ZIP = $(abspath test.zip)
+
+.PHONY: test-reset test-run test
+
+# test.zip からテストデータを再展開
+test-reset:
+	@echo "=== Resetting test data ==="
+	rm -rf $(TEST_DIR) __MACOSX
+	unzip -q $(TEST_ZIP)
+	rm -rf __MACOSX
+	@echo "Done"
+
+# test/ で imanage を実行し、XMP 生成を確認
+test-run:
+	@echo "=== Running imanage ==="
+	(cd $(TEST_DIR) && PYTHONPATH=$(abspath src) $(abspath $(PYTHON)) -m imanage)
+	@echo ""
+	@echo "=== Generated XMP files ==="
+	@find $(TEST_DIR) -name "*.xmp" | sort
+
+# リセット → 実行を一括
+test: test-reset test-run

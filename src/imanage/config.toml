@@ -1,0 +1,67 @@
+# ディレクトリデフォルトネーム / 日付ファイル下の構成
+jpg_dir_name = "jpg"
+raw_dir_name = "raw"
+retouch_dir_name = "retouch"
+
+meta_target = ["Rating", "Label"]
+
+# 日付形式 : 同期する対象
+date_format = "%Y%m%d" # 0埋め 表記 exp → 20230807
+
+# ファイル拡張子
+target_jpg_extensions = ["JPG", "JPEG", "JPE", "JFIF", "jpg", "jpeg", "jpe", "jfif"]
+target_raw_extensions = [
+  "ARW", "arw",           # Sony Alpha
+  "SRF", "srf",           # Sony（旧機種）
+  "SR2", "sr2",           # Sony（旧機種）
+  "RAF", "raf",           # Fujifilm
+  "CR3", "cr3",           # Canon（EOS R系）
+  "CR2", "cr2",           # Canon（旧 DSLR）
+  "CRW", "crw",           # Canon（初期）
+  "NEF", "nef",           # Nikon
+  "NRW", "nrw",           # Nikon（コンパクト）
+  "ORF", "orf",           # Olympus / OM System
+  "RW2", "rw2",           # Panasonic
+  "RAW", "raw",           # Panasonic（一部機種）
+  "PEF", "pef",           # Pentax
+  "DNG", "dng",           # Adobe / Leica / Pentax 等
+  "RWL", "rwl",           # Leica
+  "SRW", "srw",           # Samsung
+  "X3F", "x3f",           # Sigma
+  "DCR", "dcr",           # Kodak
+  "K25", "k25",           # Kodak
+  "KDC", "kdc",           # Kodak
+  "ERF", "erf",           # Epson
+  "MEF", "mef",           # Mamiya
+  "3FR", "3fr",           # Hasselblad
+  "IIQ", "iiq",           # Phase One
+  "MOS", "mos",           # Leaf
+]
+
+# -o オプション：フォルダ階層の構成
+# 使用可能なフィールド: maker, model, creator, lens, focal_length, shutter_speed, date
+#
+# 出力ディレクトリ構造の例 (hierarchy = ["maker", "model", "date"]):
+#
+#   <cwd>/
+#   ├── SONY/
+#   │   └── ILCE-7M4/
+#   │       └── 20230807/
+#   │           ├── jpg/
+#   │           │   └── DSC00001.JPG
+#   │           └── raw/
+#   │               ├── DSC00001.ARW
+#   │               └── DSC00001.xmp
+#   └── FUJIFILM/
+#       └── X-T5/
+#           └── 20230808/
+#               ├── jpg/
+#               │   └── DSCF0001.JPG
+#               └── raw/
+#                   ├── DSCF0001.RAF
+#                   └── DSCF0001.xmp
+#
+# EXIF が取得できないファイル（RAW 単体など）は Unknown で補完される:
+#   <cwd>/Unknown/Unknown/20230807/raw/DSC00001.ARW
+[organize]
+hierarchy = ["maker", "model", "date"]

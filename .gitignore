@@ -1,8 +1,7 @@
-*/.DS_Store
-__pycache__/
-conf.egg-info/
-.DS_Store
-src/
-conf/
-tools/
+test/
+*.zip
+.venv/
+src/imanage/_version.py
 build/
+dist/
+*.spec
