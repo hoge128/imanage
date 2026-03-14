@@ -1,6 +1,6 @@
 # Makefile
 APP_NAME   = imanage
-VERSION    := $(shell python3 -m setuptools_scm 2>/dev/null || grep '^version' pyproject.toml | sed 's/version = "\(.*\)"/\1/')
+VERSION    = $(shell grep "^__version__" src/$(APP_NAME)/_version.py 2>/dev/null | sed "s/__version__ = version = '\\(.*\\)'/\\1/")
 DIST_DIR   = dist
 BIN_DIR    = ~/.local/bin
 CONFIG_DIR = ~/.config/$(APP_NAME)
@@ -12,13 +12,18 @@ PIP        = $(VENV)/bin/pip
 
 # --- タスク定義 -------------------------
 
-.PHONY: all build install clean setup
+.PHONY: all build install clean setup deps
 
 # ビルド一括処理
 all: clean build install
 
+# システム依存関係 (macOS / Homebrew)
+deps:
+	@command -v brew >/dev/null 2>&1 || { echo "Error: Homebrew が見つかりません。https://brew.sh からインストールしてください。"; exit 1; }
+	brew install exempi
+
 # venv セットアップ
-setup:
+setup: deps
 	python3 -m venv $(VENV)
 	$(PIP) install --upgrade pip
 	$(PIP) install -e .
@@ -35,7 +40,7 @@ build: setup
 		--hidden-import=libxmp.utils \
 		--hidden-import=tomllib \
 		--hidden-import=tomli \
-		--add-data "src/imanage/config.toml:imanage" \
+		--add-data "$(abspath src/imanage/config.toml):imanage" \
 		--paths src
 	@echo "Build finished: $(DIST_DIR)/$(APP_NAME)-$(VERSION)"
 
