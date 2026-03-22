@@ -4,6 +4,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from PIL import Image
 from libxmp import XMPFiles, XMPMeta, consts
+from imanage.btime_utils import preserve_btime
 
 XMP_NS_EXIF_AUX = "http://ns.adobe.com/exif/1.0/aux/"
 
@@ -151,14 +152,15 @@ def write_exif_to_xmp(jpg_dirs, raw_dir, target_jpg_extensions, target_raw_exten
         for ext in target_jpg_extensions:
             for jpg_path in glob.glob(os.path.join(jpg_dir, f"*.{ext}")):
                 try:
-                    xmpfile = XMPFiles(file_path=jpg_path, open_forupdate=True)
-                    xmp = xmpfile.get_xmp()
-                    if xmp is None:
-                        xmp = XMPMeta()
-                    exif = read_exif(jpg_path)
-                    apply_exif_to_xmp(xmp, exif, jpg_path)
-                    xmpfile.put_xmp(xmp)
-                    xmpfile.close_file()
+                    with preserve_btime(jpg_path):
+                        xmpfile = XMPFiles(file_path=jpg_path, open_forupdate=True)
+                        xmp = xmpfile.get_xmp()
+                        if xmp is None:
+                            xmp = XMPMeta()
+                        exif = read_exif(jpg_path)
+                        apply_exif_to_xmp(xmp, exif, jpg_path)
+                        xmpfile.put_xmp(xmp)
+                        xmpfile.close_file()
                 except Exception as e:
                     print(f"XMP 書き込みエラー ({jpg_path}): {e}")
 

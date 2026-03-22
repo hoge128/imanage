@@ -236,3 +236,38 @@ hierarchy = ["maker", "date"]
         └── raw/
             └── 0001.raw
 ```
+
+## btime（ファイル作成日時）保全の仕組み
+
+### btime とは何か
+
+macOS では、ファイルに `st_birthtime`（通称 **btime**）と呼ばれる「ファイル作成日時」属性があります。カメラから転送した直後の JPG・RAW ファイルでは、これがカメラの記録した撮影日時に対応します。
+
+`imanage -o` の日付フォルダ仕分けはこの btime を基準にしており、btime が破壊されると誤った日付フォルダに振り分けられてしまいます。
+
+### 発見されたバグ
+
+imanage には btime を無意識に破壊する箇所が 2 か所存在していました。
+
+**主犯: XMP インライン書き込み（`xmp_handler.py`）**
+
+`python-xmp-toolkit` (libxmp/exempi) は `XMPFiles(open_forupdate=True)` で JPG を開き、`close_file()` 時に内部で一時ファイルを作成して元ファイルにリネームします。OS からは「新規ファイルの作成」と見なされるため、btime が現在時刻にリセットされます。
+
+**副犯: `shutil.move()` によるファイル移動（`core.py`）**
+
+同一ファイルシステム内の移動では `os.rename()` が使われ btime は保持されますが、クロスファイルシステム移動（例: 外付けドライブへの移動）では `shutil.copy2() + os.remove()` に降格します。`copy2()` はコピー先で新規ファイルを作成するため、btime がリセットされます。
+
+### 対策: `btime_utils.py`
+
+上記のバグを修正するため、`src/imanage/btime_utils.py` に btime 操作ユーティリティを集約しました。
+
+| 関数 / CM | 用途 |
+|---|---|
+| `get_btime(path)` | `st_birthtime` を取得（Linux では `None`） |
+| `set_btime(path, btime)` | macOS `setattrlist(2)` syscall で birthtime を設定 |
+| `preserve_btime(path)` | コンテキストマネージャ。処理前後で btime を保存・復元する |
+| `btime_safe_move(src, dst)` | `shutil.move()` の代替。移動後に btime を復元する |
+
+XMP 書き込み時は `with preserve_btime(jpg_path):` でラップし、ファイル移動時は `shutil.move()` の代わりに `btime_safe_move()` を使用することで、いかなる操作においても btime を変化させない実装になっています。
+
+> **開発者向け注意事項:** 新たにファイル操作を追加する場合は必ず `btime_utils.py` のユーティリティを使用してください。`shutil.move()` の直接呼び出しおよびインプレース書き込みの `preserve_btime` なし使用は禁止です。詳細は `CLAUDE.md` を参照してください。

@@ -1,5 +1,6 @@
 #!/usr/bin/ python3
 import os, sys, shutil, glob, argparse
+from imanage.btime_utils import btime_safe_move
 from collections import deque
 from datetime import datetime
 
@@ -225,9 +226,9 @@ def dir_structure():
             file_path = os.path.join(os.getcwd(), _file)
             if ext in target_jpg_extensions:
                 dest = iCon.retouch_dir_path if is_retouched(file_path) else iCon.jpg_dir_path
-                shutil.move(file_path, dest)
+                btime_safe_move(file_path, dest)
             elif ext in target_raw_extensions:
-                shutil.move(file_path, iCon.raw_dir_path)
+                btime_safe_move(file_path, iCon.raw_dir_path)
             elif os.path.isfile(file_path) and not _file.startswith("."):
                 print(f"スキップ: {_file} は処理されません（対象外の拡張子）")
     write_exif_to_xmp(
@@ -254,9 +255,9 @@ class imageContainer:
             file_path = os.path.join(os.getcwd(), _file)
             if ext in target_jpg_extensions:
                 dest = self.retouch_dir_path if is_retouched(file_path) else self.jpg_dir_path
-                shutil.move(file_path, dest)
+                btime_safe_move(file_path, dest)
             elif ext in target_raw_extensions:
-                shutil.move(file_path, self.raw_dir_path)
+                btime_safe_move(file_path, self.raw_dir_path)
             elif os.path.isfile(file_path) and not _file.startswith("."):
                 print(f"スキップ: {_file} は処理されません（対象外の拡張子）")
         write_exif_to_xmp(
@@ -299,7 +300,7 @@ class imageContainer:
                 path_parts = [fields.get(field, "Unknown") for field in hierarchy]
                 dest_dir = os.path.join(os.getcwd(), *path_parts, dir_name)
                 os.makedirs(dest_dir, exist_ok=True)
-                shutil.move(file_path, os.path.join(dest_dir, _file))
+                btime_safe_move(file_path, os.path.join(dest_dir, _file))
                 print("Moved {} -> {}".format(file_path, dest_dir))
 
     """
