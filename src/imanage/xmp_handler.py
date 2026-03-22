@@ -4,10 +4,20 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from fractions import Fraction
 from PIL import Image
-from libxmp import XMPFiles, XMPMeta, consts
+from libxmp import XMPFiles, XMPMeta, XMPIterator, consts
 from imanage.btime_utils import preserve_btime
+from imanage import __version__
 
-XMP_NS_EXIF_AUX = "http://ns.adobe.com/exif/1.0/aux/"
+_MIME_TYPES = {
+    "jpg": "image/jpeg", "jpeg": "image/jpeg", "jpe": "image/jpeg",
+    "tif": "image/tiff", "tiff": "image/tiff",
+    "png": "image/png",
+}
+
+_EXIF_TAGS = {
+    "creator": 315,
+    "lens":    42036,
+}
 
 
 def _to_rational_str(val):
@@ -16,15 +26,6 @@ def _to_rational_str(val):
     except AttributeError:
         frac = Fraction(val).limit_denominator(100000)
         return f"{frac.numerator}/{frac.denominator}"
-
-_EXIF_TAGS = {
-    "maker":         271,
-    "model":         272,
-    "creator":       315,
-    "lens":          42036,
-    "focal_length":  37386,
-    "shutter_speed": 33434,
-}
 
 
 def read_exif(file_path):
@@ -43,28 +44,16 @@ def read_exif(file_path):
 
 
 def apply_exif_to_xmp(xmp, exif, file_path):
-    def _set_str(ns, prop, value):
-        if not xmp.does_property_exist(ns, prop):
-            xmp.set_property(ns, prop, str(value))
-
-    if "maker" in exif:
-        _set_str(consts.XMP_NS_TIFF, "Make", exif["maker"])
-    if "model" in exif:
-        _set_str(consts.XMP_NS_TIFF, "Model", exif["model"])
     if "lens" in exif:
-        _set_str(XMP_NS_EXIF_AUX, "Lens", exif["lens"])
-
-    if "focal_length" in exif:
-        if not xmp.does_property_exist(consts.XMP_NS_EXIF, "FocalLength"):
-            xmp.set_property(consts.XMP_NS_EXIF, "FocalLength", _to_rational_str(exif["focal_length"]))
-
-    if "shutter_speed" in exif:
-        if not xmp.does_property_exist(consts.XMP_NS_EXIF, "ExposureTime"):
-            xmp.set_property(consts.XMP_NS_EXIF, "ExposureTime", _to_rational_str(exif["shutter_speed"]))
+        if not xmp.does_property_exist(consts.XMP_NS_EXIF_Aux, "Lens"):
+            xmp.set_property(consts.XMP_NS_EXIF_Aux, "Lens", exif["lens"])
 
     if "creator" in exif:
         if not xmp.does_property_exist(consts.XMP_NS_DC, "creator"):
-            xmp.append_array_item(consts.XMP_NS_DC, "creator", str(exif["creator"]), {"prop_array_is_ordered": True, "prop_value_is_array": True})
+            xmp.append_array_item(
+                consts.XMP_NS_DC, "creator", str(exif["creator"]),
+                {"prop_array_is_ordered": True, "prop_value_is_array": True},
+            )
 
     stat = os.stat(file_path)
     try:
@@ -72,11 +61,76 @@ def apply_exif_to_xmp(xmp, exif, file_path):
     except AttributeError:
         timestamp = stat.st_mtime
     dt = datetime.fromtimestamp(timestamp).astimezone()
-    tz_str = dt.strftime("%z")  # "+0900"
-    tz_fmt = f"{tz_str[:3]}:{tz_str[3:]}"  # "+09:00"
+    tz_str = dt.strftime("%z")
+    tz_fmt = f"{tz_str[:3]}:{tz_str[3:]}"
     date_str = dt.strftime(f"%Y-%m-%dT%H:%M:%S.{dt.microsecond // 1000:03d}") + tz_fmt
     if not xmp.does_property_exist(consts.XMP_NS_XMP, "CreateDate"):
         xmp.set_property(consts.XMP_NS_XMP, "CreateDate", date_str)
+
+
+def _remove_unwanted_namespaces(xmp):
+    NS_TO_REMOVE = [
+        consts.XMP_NS_TIFF,
+        consts.XMP_NS_EXIF,
+        "http://cipa.jp/exif/1.0/",
+    ]
+    for ns in NS_TO_REMOVE:
+        try:
+            top_props = [
+                path for _, path, _, _ in XMPIterator(xmp, ns)
+                if path and "[" not in path and "/" not in path
+            ]
+            for prop in top_props:
+                xmp.delete_property(ns, prop)
+        except Exception:
+            pass
+
+
+def _now_str():
+    now = datetime.now().astimezone()
+    tz_str = now.strftime("%z")
+    tz_fmt = f"{tz_str[:3]}:{tz_str[3:]}"
+    return now.strftime(f"%Y-%m-%dT%H:%M:%S.{now.microsecond // 1000:03d}") + tz_fmt
+
+
+def _apply_workflow_metadata(xmp, file_path):
+    now = _now_str()
+    agent = f"imanage v{__version__}"
+
+    xmp.set_property(consts.XMP_NS_XMP, "CreatorTool", agent)
+    xmp.set_property(consts.XMP_NS_XMP, "MetadataDate", now)
+    xmp.set_property(consts.XMP_NS_XMP, "ModifyDate", now)
+
+    ext = os.path.splitext(file_path)[1].lstrip(".").lower()
+    mime = _MIME_TYPES.get(ext, "image/x-raw")
+    if not xmp.does_property_exist(consts.XMP_NS_DC, "format"):
+        xmp.set_property(consts.XMP_NS_DC, "format", mime)
+
+    if not xmp.does_property_exist(consts.XMP_NS_CameraRaw, "AlreadyApplied"):
+        xmp.set_property(consts.XMP_NS_CameraRaw, "AlreadyApplied", "True")
+
+    if not xmp.does_property_exist(consts.XMP_NS_XMP_MM, "OriginalDocumentID"):
+        try:
+            doc_id = xmp.get_property(consts.XMP_NS_XMP_MM, "DocumentID")
+            if doc_id:
+                xmp.set_property(consts.XMP_NS_XMP_MM, "OriginalDocumentID", doc_id)
+        except Exception:
+            pass
+
+    try:
+        instance_id = xmp.get_property(consts.XMP_NS_XMP_MM, "InstanceID")
+    except Exception:
+        instance_id = ""
+
+    xmp.append_array_item(
+        consts.XMP_NS_XMP_MM, "History", "",
+        {"prop_value_is_struct": True, "prop_array_is_ordered": True, "prop_value_is_array": True},
+    )
+    xmp.set_property(consts.XMP_NS_XMP_MM, "History[last()]/stEvt:action", "saved")
+    xmp.set_property(consts.XMP_NS_XMP_MM, "History[last()]/stEvt:instanceID", instance_id)
+    xmp.set_property(consts.XMP_NS_XMP_MM, "History[last()]/stEvt:when", now)
+    xmp.set_property(consts.XMP_NS_XMP_MM, "History[last()]/stEvt:softwareAgent", agent)
+    xmp.set_property(consts.XMP_NS_XMP_MM, "History[last()]/stEvt:changed", "/metadata")
 
 
 def _sync_one_jpg(jpg_path, meta_target, sidecar_index):
@@ -159,8 +213,10 @@ def write_exif_to_xmp(jpg_dirs, raw_dir, target_jpg_extensions, target_raw_exten
                         xmp = xmpfile.get_xmp()
                         if xmp is None:
                             xmp = XMPMeta()
+                        _remove_unwanted_namespaces(xmp)
                         exif = read_exif(jpg_path)
                         apply_exif_to_xmp(xmp, exif, jpg_path)
+                        _apply_workflow_metadata(xmp, jpg_path)
                         xmpfile.put_xmp(xmp)
                         xmpfile.close_file()
                 except Exception as e:
@@ -186,8 +242,10 @@ def write_exif_to_xmp(jpg_dirs, raw_dir, target_jpg_extensions, target_raw_exten
                             xmp = XMPMeta()
                 else:
                     xmp = XMPMeta()
+                _remove_unwanted_namespaces(xmp)
                 exif = read_exif(raw_path)
                 apply_exif_to_xmp(xmp, exif, raw_path)
+                _apply_workflow_metadata(xmp, raw_path)
                 xmp_str = xmp.serialize_to_str()
                 with open(sidecar_path, "w", encoding="utf-8") as f:
                     f.write(xmp_str)
