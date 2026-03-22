@@ -52,7 +52,7 @@ def apply_exif_to_xmp(xmp, exif, file_path):
         if not xmp.does_property_exist(consts.XMP_NS_DC, "creator"):
             xmp.append_array_item(
                 consts.XMP_NS_DC, "creator", str(exif["creator"]),
-                {"prop_array_is_ordered": True, "prop_value_is_array": True},
+                {"prop_array_is_ordered": True},
             )
 
     stat = os.stat(file_path)
@@ -123,8 +123,9 @@ def _apply_workflow_metadata(xmp, file_path):
         instance_id = ""
 
     xmp.append_array_item(
-        consts.XMP_NS_XMP_MM, "History", "",
-        {"prop_value_is_struct": True, "prop_array_is_ordered": True, "prop_value_is_array": True},
+        consts.XMP_NS_XMP_MM, "History", None,
+        {"prop_array_is_ordered": True},
+        prop_value_is_struct=True,
     )
     xmp.set_property(consts.XMP_NS_XMP_MM, "History[last()]/stEvt:action", "saved")
     xmp.set_property(consts.XMP_NS_XMP_MM, "History[last()]/stEvt:instanceID", instance_id)

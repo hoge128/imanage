@@ -1,6 +1,6 @@
 # Makefile
 APP_NAME   = imanage
-VERSION    = $(shell grep "^__version__" src/$(APP_NAME)/_version.py 2>/dev/null | sed "s/__version__ = version = '\\(.*\\)'/\\1/")
+VERSION    = $(shell grep "^__version__ =" src/$(APP_NAME)/_version.py 2>/dev/null | sed "s/__version__ = version = '\\(.*\\)'/\\1/")
 DIST_DIR   = dist
 BIN_DIR    = ~/.local/bin
 CONFIG_DIR = ~/.config/$(APP_NAME)
@@ -12,7 +12,7 @@ PIP        = $(VENV)/bin/pip
 
 # --- タスク定義 -------------------------
 
-.PHONY: all build install clean setup deps
+.PHONY: all build install clean setup deps release
 
 # ビルド一括処理
 all: clean build install
@@ -87,3 +87,11 @@ test-run:
 
 # リセット → 実行を一括
 test: test-reset test-run
+
+# バージョンを指定してリリースビルドを作成する
+# 使い方: make release VERSION_TAG=v1.0.1
+release:
+	@if [ -z "$(VERSION_TAG)" ]; then echo "Usage: make release VERSION_TAG=v1.0.1"; exit 1; fi
+	git tag $(VERSION_TAG)
+	$(VENV)/bin/pip install -e . -q
+	$(MAKE) all

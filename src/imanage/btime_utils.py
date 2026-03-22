@@ -54,13 +54,17 @@ def preserve_btime(path: str):
                 pass  # 復元失敗は silent fail（処理継続を優先）
 
 
-def btime_safe_move(src: str, dst: str) -> None:
-    """btime を保持したまま shutil.move を実行する"""
+def btime_safe_move(src: str, dst: str) -> bool:
+    """btime を保持したまま shutil.move を実行する。
+    移動先に同名ファイルが存在する場合は何もせず False を返す。"""
+    final = os.path.join(dst, os.path.basename(src)) if os.path.isdir(dst) else dst
+    if os.path.exists(final):
+        return False
     btime = get_btime(src)
     shutil.move(src, dst)
     if btime is not None:
-        final = os.path.join(dst, os.path.basename(src)) if os.path.isdir(dst) else dst
         try:
             set_btime(final, btime)
         except Exception:
             pass
+    return True
