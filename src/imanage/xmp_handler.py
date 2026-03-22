@@ -2,11 +2,20 @@ import os
 import glob
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
+from fractions import Fraction
 from PIL import Image
 from libxmp import XMPFiles, XMPMeta, consts
 from imanage.btime_utils import preserve_btime
 
 XMP_NS_EXIF_AUX = "http://ns.adobe.com/exif/1.0/aux/"
+
+
+def _to_rational_str(val):
+    try:
+        return f"{val.numerator}/{val.denominator}"
+    except AttributeError:
+        frac = Fraction(val).limit_denominator(100000)
+        return f"{frac.numerator}/{frac.denominator}"
 
 _EXIF_TAGS = {
     "maker":         271,
@@ -46,22 +55,12 @@ def apply_exif_to_xmp(xmp, exif, file_path):
         _set_str(XMP_NS_EXIF_AUX, "Lens", exif["lens"])
 
     if "focal_length" in exif:
-        val = exif["focal_length"]
-        try:
-            rational_str = f"{val.numerator}/{val.denominator}"
-        except AttributeError:
-            rational_str = str(val)
         if not xmp.does_property_exist(consts.XMP_NS_EXIF, "FocalLength"):
-            xmp.set_property(consts.XMP_NS_EXIF, "FocalLength", rational_str)
+            xmp.set_property(consts.XMP_NS_EXIF, "FocalLength", _to_rational_str(exif["focal_length"]))
 
     if "shutter_speed" in exif:
-        val = exif["shutter_speed"]
-        try:
-            rational_str = f"{val.numerator}/{val.denominator}"
-        except AttributeError:
-            rational_str = str(val)
         if not xmp.does_property_exist(consts.XMP_NS_EXIF, "ExposureTime"):
-            xmp.set_property(consts.XMP_NS_EXIF, "ExposureTime", rational_str)
+            xmp.set_property(consts.XMP_NS_EXIF, "ExposureTime", _to_rational_str(exif["shutter_speed"]))
 
     if "creator" in exif:
         if not xmp.does_property_exist(consts.XMP_NS_DC, "creator"):
@@ -72,7 +71,10 @@ def apply_exif_to_xmp(xmp, exif, file_path):
         timestamp = stat.st_birthtime
     except AttributeError:
         timestamp = stat.st_mtime
-    date_str = datetime.fromtimestamp(timestamp).strftime("%Y-%m-%dT%H:%M:%S")
+    dt = datetime.fromtimestamp(timestamp).astimezone()
+    tz_str = dt.strftime("%z")  # "+0900"
+    tz_fmt = f"{tz_str[:3]}:{tz_str[3:]}"  # "+09:00"
+    date_str = dt.strftime(f"%Y-%m-%dT%H:%M:%S.{dt.microsecond // 1000:03d}") + tz_fmt
     if not xmp.does_property_exist(consts.XMP_NS_XMP, "CreateDate"):
         xmp.set_property(consts.XMP_NS_XMP, "CreateDate", date_str)
 
