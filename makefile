@@ -31,7 +31,7 @@ setup: deps
 # ビルド (PyInstaller)
 build: setup
 	@echo "=== Building $(APP_NAME) ==="
-	$(VENV)/bin/pyinstaller --onefile src/imanage/core.py --name $(APP_NAME)-$(VERSION) \
+	$(VENV)/bin/pyinstaller --onedir src/imanage/__main__.py --name $(APP_NAME)-$(VERSION) \
 		--specpath build \
 		--hidden-import=PIL \
 		--hidden-import=PIL.Image \
@@ -40,14 +40,18 @@ build: setup
 		--hidden-import=libxmp.utils \
 		--hidden-import=tomllib \
 		--hidden-import=tomli \
+		--hidden-import=tqdm \
+		--hidden-import=tqdm.auto \
+		--hidden-import=imanage.log \
 		--add-data "$(abspath src/imanage/config.toml):imanage" \
 		--paths src
-	@echo "Build finished: $(DIST_DIR)/$(APP_NAME)-$(VERSION)"
+	codesign --force --deep --sign - $(DIST_DIR)/$(APP_NAME)-$(VERSION)/$(APP_NAME)-$(VERSION)
+	@echo "Build finished: $(DIST_DIR)/$(APP_NAME)-$(VERSION)/$(APP_NAME)-$(VERSION)"
 
 # インストール (binへコピー + 設定ファイル配置)
 install:
 	@echo "=== Installing $(APP_NAME) ==="
-	ln -sf $(abspath $(DIST_DIR)/$(APP_NAME)-$(VERSION)) $(BIN_DIR)/$(APP_NAME)
+	ln -sf $(abspath $(DIST_DIR)/$(APP_NAME)-$(VERSION)/$(APP_NAME)-$(VERSION)) $(BIN_DIR)/$(APP_NAME)
 	@echo "Installed successfully: $(BIN_DIR)/$(APP_NAME)"
 	@mkdir -p $(CONFIG_DIR)
 	@if [ ! -f $(CONFIG_DST) ]; then \
@@ -56,6 +60,9 @@ install:
 	else \
 		echo "Config already exists (skipped): $(CONFIG_DST)"; \
 	fi
+	@echo "Pre-warming dyld closure cache (初回起動を高速化)..."
+	@$(BIN_DIR)/$(APP_NAME) -h > /dev/null 2>&1 || true
+	@echo "Done."
 
 # クリーンアップ
 clean:

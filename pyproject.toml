@@ -10,8 +10,10 @@ dependencies = [
     "tomli",
     "pillow",
     "python-xmp-toolkit",
+    "tqdm",
+    "send2trash",
     "pyinstaller",
-    "setuptools-scm>=8"
+    "setuptools-scm>=8",
 ]
 requires-python = ">=3.10"
 
