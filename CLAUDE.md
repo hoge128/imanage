@@ -1,5 +1,43 @@
 # imanage 開発ポリシー
 
+## ファイル削除ポリシー
+
+**`rm` コマンドおよび `os.remove()` / `shutil.rmtree()` 等による完全削除は絶対に使用してはならない。**
+**ファイル・ディレクトリの削除は必ず OS のゴミ箱へ移動する方法で行うこと。**
+
+### 理由
+
+写真データは不可逆的に失うと取り返しがつかない。誤操作・バグによるデータ消失を防ぐため、
+削除操作は常にゴミ箱経由とし、ユーザーが復元できる余地を残す。
+
+### 実装方法
+
+macOS では `trash` コマンド（`brew install trash`）を使用する：
+
+```bash
+# シェルスクリプト・Bash ツール経由での削除
+trash /path/to/file
+```
+
+Python コード内では `send2trash` ライブラリを使用する：
+
+```python
+from send2trash import send2trash
+
+send2trash("/path/to/file")      # ファイル
+send2trash("/path/to/directory") # ディレクトリ
+```
+
+### 禁止事項
+
+- `rm` / `rm -rf` コマンドの使用禁止
+- `os.remove()` の直接呼び出し禁止
+- `os.unlink()` の直接呼び出し禁止
+- `shutil.rmtree()` の直接呼び出し禁止
+- `pathlib.Path.unlink()` の直接呼び出し禁止
+
+---
+
 ## btime（ファイル作成日時）保全ポリシー
 
 **imanage はいかなる操作においてもファイルの btime（macOS の `st_birthtime`）を変更してはならない。**
