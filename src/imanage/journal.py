@@ -11,6 +11,8 @@ import os
 import threading
 import logging
 
+from send2trash import send2trash
+
 logger = logging.getLogger("imanage.journal")
 
 JOURNAL_PATH = os.path.expanduser("~/.local/state/imanage/last_operation.json")
@@ -98,11 +100,11 @@ class Journal:
                     path = action["path"]
                     if os.path.exists(path):
                         try:
-                            os.remove(path)
-                            logger.debug(f"削除: {path}")
+                            send2trash(path)
+                            logger.debug(f"ゴミ箱へ移動: {path}")
                             success += 1
                         except Exception as e:
-                            logger.warning(f"スキップ（削除失敗）: {path}: {e}")
+                            logger.warning(f"スキップ（ゴミ箱移動失敗）: {path}: {e}")
                             skipped += 1
                     else:
                         logger.warning(f"スキップ（ファイルが見つかりません）: {path}")
@@ -110,11 +112,12 @@ class Journal:
 
                 elif t == "mkdir":
                     path = action["path"]
-                    try:
-                        os.rmdir(path)
-                        logger.debug(f"ディレクトリ削除: {path}")
-                    except OSError:
-                        pass  # 空でないか存在しない — 無視
+                    if os.path.exists(path):
+                        try:
+                            send2trash(path)
+                            logger.debug(f"ディレクトリをゴミ箱へ移動: {path}")
+                        except Exception as e:
+                            logger.warning(f"スキップ（ディレクトリのゴミ箱移動失敗）: {path}: {e}")
 
         parts = [f"{success} 件成功"]
         if skipped:
