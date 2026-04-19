@@ -77,12 +77,20 @@ def get_exif_fields(jpg_path):
         else:
             result[field] = str(val).strip().replace("\x00", "").replace("/", "-").replace(" ", "_") or "Unknown"
 
-    stat = os.stat(jpg_path)
-    try:
-        timestamp = stat.st_birthtime
-    except AttributeError:
-        timestamp = stat.st_mtime
-    result["date"] = datetime.fromtimestamp(timestamp).strftime(date_format)
+    # 撮影日時: EXIF DateTimeOriginal(36867) → DateTimeDigitized(36868) → btime
+    exif_date = exif_data.get(36867) or exif_data.get(36868)
+    if exif_date:
+        try:
+            result["date"] = datetime.strptime(str(exif_date)[:19], "%Y:%m:%d %H:%M:%S").strftime(date_format)
+        except Exception:
+            exif_date = None
+    if not exif_date:
+        stat = os.stat(jpg_path)
+        try:
+            timestamp = stat.st_birthtime
+        except AttributeError:
+            timestamp = stat.st_mtime
+        result["date"] = datetime.fromtimestamp(timestamp).strftime(date_format)
 
     return result
 
