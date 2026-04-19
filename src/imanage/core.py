@@ -100,6 +100,13 @@ def is_retouched(jpg_path):
         return False
 
 
+def _resolve_fields(file_path, stem, exif_cache):
+    if stem in exif_cache:
+        return exif_cache[stem]
+    # キャッシュにない場合（JPG 対応なし RAW など）はファイル自身から直接 EXIF を読む
+    return get_exif_fields(file_path)
+
+
 def build_exif_cache(jpg_dir_path):
     cache = {}
     if not os.path.isdir(jpg_dir_path):
@@ -134,27 +141,80 @@ class OrganizeCommand(BaseCommand):
         loose = [f for f in os.listdir(path)
                  if os.path.isfile(os.path.join(path, f)) and not f.startswith('.')
                  and os.path.splitext(f)[1].lstrip('.').lower() in all_exts]
-        count_in_dirs = 0
-        for dn in [jpg_dir_name, raw_dir_name, retouch_dir_name]:
-            dp = os.path.join(path, dn)
-            if os.path.isdir(dp):
-                count_in_dirs += sum(1 for f in os.listdir(dp)
-                                     if f != ".DS_Store" and os.path.isfile(os.path.join(dp, f)))
         hierarchy = _config.get("organize", {}).get("hierarchy", ["date"])
         logger.info("[処理内容]")
         if loose:
-            logger.info(f"  ルーズファイル {len(loose)} 件を振り分けます")
-            logger.info(f"    JPG/現像済み → {os.path.join(path, jpg_dir_name)}/")
-            logger.info(f"    RAW          → {os.path.join(path, raw_dir_name)}/")
-        logger.info(f"  {count_in_dirs} 件のファイルを EXIF 情報 ({' / '.join(hierarchy)}) に基づいてサブディレクトリへ整理します")
-        logger.info(f"  移動先例: {os.path.join(path, '/'.join(['<' + h + '>' for h in hierarchy]), jpg_dir_name)}/")
+            # JPG を先に処理することで RAW が同名 JPG の EXIF を参照できるようにソート
+            loose_sorted = sorted(loose, key=lambda f: (
+                0 if os.path.splitext(f)[1].lstrip('.').lower() in target_jpg_extensions else 1, f
+            ))
+            loose_exif = {}
+            dest_groups = {}
+            with make_bar(loose_sorted, desc="EXIFスキャン") as bar:
+                for f in bar:
+                    bar.set_postfix_str(f, refresh=False)
+                    ext = os.path.splitext(f)[1].lstrip('.').lower()
+                    fp = os.path.join(path, f)
+                    stem = os.path.splitext(f)[0]
+                    if ext in target_jpg_extensions:
+                        try:
+                            loose_exif[stem] = get_exif_fields(fp)
+                        except Exception:
+                            pass
+                        dir_name = retouch_dir_name if is_retouched(fp) else jpg_dir_name
+                    else:
+                        dir_name = raw_dir_name
+                    fields = _resolve_fields(fp, stem, loose_exif)
+                    dest_key = os.path.join(*[fields.get(h, "Unknown") for h in hierarchy], dir_name)
+                    dest_groups[dest_key] = dest_groups.get(dest_key, 0) + 1
+            self._exif_cache = loose_exif
+
+            logger.info(f"  ルーズファイル {len(loose)} 件を振り分け後、以下へ整理します:")
+            for dest, count in sorted(dest_groups.items()):
+                logger.info(f"    {dest}/  ({count} 件)")
+            return
+
+        # ルーズファイルなし → EXIF を読んで実際の移動先を表示
+        jpg_dir = os.path.join(path, jpg_dir_name)
+        retouch_dir = os.path.join(path, retouch_dir_name)
+        exif_cache = build_exif_cache(jpg_dir)
+        if os.path.isdir(retouch_dir):
+            exif_cache.update(build_exif_cache(retouch_dir))
+        self._exif_cache = exif_cache
+
+        all_files = []
+        for dir_path, dir_name in [
+            (os.path.join(path, jpg_dir_name), jpg_dir_name),
+            (os.path.join(path, raw_dir_name), raw_dir_name),
+            (os.path.join(path, retouch_dir_name), retouch_dir_name),
+        ]:
+            if not os.path.isdir(dir_path):
+                continue
+            for f in os.listdir(dir_path):
+                if f != ".DS_Store" and os.path.isfile(os.path.join(dir_path, f)):
+                    all_files.append((dir_path, dir_name, f))
+
+        if not all_files:
+            logger.info("  整理対象のファイルがありません")
+            return
+
+        dest_groups = {}
+        for dir_path, dir_name, f in all_files:
+            fields = _resolve_fields(os.path.join(dir_path, f), os.path.splitext(f)[0], exif_cache)
+            dest_key = os.path.join(*[fields.get(h, "Unknown") for h in hierarchy], dir_name)
+            dest_groups[dest_key] = dest_groups.get(dest_key, 0) + 1
+
+        total = sum(dest_groups.values())
+        logger.info(f"  {total} 件のファイルを以下へ整理します:")
+        for dest, count in sorted(dest_groups.items()):
+            logger.info(f"    {dest}/  ({count} 件)")
 
     def setup(self):
         self.iCon = dir_structure()
         self.config = _config
 
     def execute(self):
-        self.iCon.date_organize(self.config)
+        self.iCon.date_organize(self.config, exif_cache=getattr(self, '_exif_cache', None))
 
     def teardown(self):
         for d in [self.iCon.jpg_dir_path, self.iCon.raw_dir_path, self.iCon.retouch_dir_path]:
@@ -178,7 +238,12 @@ class DeleteCommand(BaseCommand):
             return
         iCon = imageContainer(path)
         orphan_files = _count_orphan_raws(iCon)
-        logger.info(f"  孤立 RAW {len(orphan_files)} 件をゴミ箱に移動します")
+        # 孤立 RAW に対応する .xmp サイドカーも削除対象になるためカウントする
+        orphan_stems = {os.path.splitext(f)[0] for f in orphan_files}
+        orphan_xmp = [f for f in os.listdir(raw_dir)
+                      if f.endswith('.xmp') and os.path.splitext(f)[0] in orphan_stems]
+        xmp_note = f" (XMP サイドカー {len(orphan_xmp)} 件を含む)" if orphan_xmp else ""
+        logger.info(f"  孤立 RAW {len(orphan_files)} 件{xmp_note}をゴミ箱に移動します")
         for f in orphan_files:
             logger.info(f"    {os.path.join(raw_dir, f)}")
 
@@ -204,12 +269,41 @@ class SyncCommand(BaseCommand):
             return
         iCon = imageContainer(path)
         orphan_files = _count_orphan_raws(iCon)
-        logger.info(f"  孤立 RAW {len(orphan_files)} 件をゴミ箱に移動します")
+        orphan_stems = {os.path.splitext(f)[0] for f in orphan_files}
+        orphan_xmp = [f for f in os.listdir(raw_dir)
+                      if f.endswith('.xmp') and os.path.splitext(f)[0] in orphan_stems]
+        xmp_note = f" (XMP サイドカー {len(orphan_xmp)} 件を含む)" if orphan_xmp else ""
+        logger.info(f"  孤立 RAW {len(orphan_files)} 件{xmp_note}をゴミ箱に移動します")
         for f in orphan_files:
             logger.info(f"    {os.path.join(raw_dir, f)}")
-        jpg_count = sum(1 for f in os.listdir(jpg_dir)
-                        if f != ".DS_Store" and os.path.isfile(os.path.join(jpg_dir, f))) if os.path.isdir(jpg_dir) else 0
-        logger.info(f"  JPG {jpg_count} 件の XMP を {raw_dir}/ 配下の .xmp サイドカーへ同期します")
+
+        # JPG XMP から Rating/Label を読んで同期内容をプレビュー
+        from imanage.xmp_handler import read_xmp_meta
+        jpg_files = [
+            os.path.join(jpg_dir, f) for f in os.listdir(jpg_dir)
+            if f != ".DS_Store" and os.path.isfile(os.path.join(jpg_dir, f))
+            and os.path.splitext(f)[1].lstrip('.').lower() in target_jpg_extensions
+        ] if os.path.isdir(jpg_dir) else []
+        with_meta = 0
+        no_xmp = 0
+        no_meta = 0
+        with make_bar(jpg_files, desc="XMPスキャン") as bar:
+            for fp in bar:
+                bar.set_postfix_str(os.path.basename(fp), refresh=False)
+                result = read_xmp_meta(fp, meta_target)
+                if result is None:
+                    no_xmp += 1
+                elif any(result.values()):
+                    with_meta += 1
+                else:
+                    no_meta += 1
+        logger.info(f"  JPG {len(jpg_files)} 件の XMP を {raw_dir}/ 配下の .xmp サイドカーへ同期します")
+        if with_meta:
+            logger.info(f"    Rating/Label あり: {with_meta} 件")
+        if no_meta:
+            logger.info(f"    Rating/Label 未設定: {no_meta} 件")
+        if no_xmp:
+            logger.info(f"    XMP なし (未処理): {no_xmp} 件")
 
     def setup(self):
         self.iCon = dir_structure()
@@ -222,20 +316,55 @@ class SyncCommand(BaseCommand):
 
 class DefaultCommand(BaseCommand):
     def preview(self):
+        from imanage.xmp_handler import check_xmp_applied
         path = os.getcwd()
-        all_exts = target_jpg_extensions | target_raw_extensions
         files = [f for f in os.listdir(path)
                  if os.path.isfile(os.path.join(path, f)) and not f.startswith('.')]
         loose_jpg = [f for f in files if os.path.splitext(f)[1].lstrip('.').lower() in target_jpg_extensions]
         loose_raw = [f for f in files if os.path.splitext(f)[1].lstrip('.').lower() in target_raw_extensions]
         logger.info("[処理内容]")
         if loose_jpg:
+            retouch_count = 0
+            with make_bar(loose_jpg, desc="JPGスキャン") as bar:
+                for f in bar:
+                    bar.set_postfix_str(f, refresh=False)
+                    if is_retouched(os.path.join(path, f)):
+                        retouch_count += 1
+            normal_count = len(loose_jpg) - retouch_count
             logger.info(f"  JPG {len(loose_jpg)} 件を振り分けます")
-            logger.info(f"    通常    → {os.path.join(path, jpg_dir_name)}/")
-            logger.info(f"    現像済み → {os.path.join(path, retouch_dir_name)}/")
+            if normal_count:
+                logger.info(f"    通常    → {os.path.join(path, jpg_dir_name)}/  ({normal_count} 件)")
+            if retouch_count:
+                logger.info(f"    現像済み → {os.path.join(path, retouch_dir_name)}/  ({retouch_count} 件)")
         if loose_raw:
             logger.info(f"  RAW {len(loose_raw)} 件 → {os.path.join(path, raw_dir_name)}/")
-        logger.info(f"  XMP メタデータを写真から読み取り .xmp サイドカーへ書き込みます")
+
+        # XMP 処理状況を確認（ルーズ JPG + 既存 jpg/retouch ディレクトリ内）
+        xmp_pending = len(loose_jpg)  # ルーズファイルは未処理確定
+        xmp_done = 0
+        dir_jpg_files = []
+        for dn in [jpg_dir_name, retouch_dir_name]:
+            dp = os.path.join(path, dn)
+            if not os.path.isdir(dp):
+                continue
+            for f in os.listdir(dp):
+                if os.path.splitext(f)[1].lstrip('.').lower() not in target_jpg_extensions:
+                    continue
+                fp = os.path.join(dp, f)
+                if os.path.isfile(fp):
+                    dir_jpg_files.append(fp)
+        with make_bar(dir_jpg_files, desc="XMP確認") as bar:
+            for fp in bar:
+                bar.set_postfix_str(os.path.basename(fp), refresh=False)
+                if check_xmp_applied(fp):
+                    xmp_done += 1
+                else:
+                    xmp_pending += 1
+
+        if xmp_pending:
+            logger.info(f"  XMP 書き込み: {xmp_pending} 件")
+        if xmp_done:
+            logger.info(f"  XMP 処理済み: {xmp_done} 件 (スキップ)")
 
     def setup(self):
         self.iCon = dir_structure()
@@ -556,6 +685,7 @@ def main():
     cmd.execute()
     cmd.teardown()
     _journal.get_journal().save()
+    logger.info("\nやり直したい場合は: imanage --undo")
 
 
 def _has_target_files(dir_path):
@@ -669,14 +799,15 @@ class imageContainer:
             for f in skipped:
                 logger.warning(f"  {f}")
 
-    def date_organize(self, config):
+    def date_organize(self, config, exif_cache=None):
         hierarchy = config.get("organize", {}).get("hierarchy", ["date"])
         skipped = []
         j = _journal.get_journal()
 
-        exif_cache = build_exif_cache(self.jpg_dir_path)
-        if os.path.isdir(self.retouch_dir_path):
-            exif_cache.update(build_exif_cache(self.retouch_dir_path))
+        if exif_cache is None:
+            exif_cache = build_exif_cache(self.jpg_dir_path)
+            if os.path.isdir(self.retouch_dir_path):
+                exif_cache.update(build_exif_cache(self.retouch_dir_path))
 
         all_files = []
         for dir_path, dir_name in [(self.jpg_dir_path, jpg_dir_name), (self.raw_dir_path, raw_dir_name), (self.retouch_dir_path, retouch_dir_name)]:
@@ -694,18 +825,7 @@ class imageContainer:
                 file_path = os.path.join(dir_path, _file)
 
                 stem = os.path.splitext(_file)[0]
-                if stem in exif_cache:
-                    fields = exif_cache[stem]
-                else:
-                    # RAW にキャッシュがない場合はファイルシステム日付 + Unknown で補完
-                    stat = os.stat(file_path)
-                    try:
-                        timestamp = stat.st_birthtime
-                    except AttributeError:
-                        timestamp = stat.st_mtime
-                    date_str = datetime.fromtimestamp(timestamp).strftime(date_format)
-                    fields = {field: "Unknown" for field in ["maker", "model", "creator", "lens", "focal_length", "shutter_speed"]}
-                    fields["date"] = date_str
+                fields = _resolve_fields(file_path, stem, exif_cache)
 
                 path_parts = [fields.get(field, "Unknown") for field in hierarchy]
                 dest_dir = os.path.join(self.base_dir, *path_parts, dir_name)

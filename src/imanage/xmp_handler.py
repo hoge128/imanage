@@ -144,6 +144,39 @@ def _apply_workflow_metadata(xmp, file_path):
     xmp.set_property(consts.XMP_NS_XMP_MM, "History[last()]/stEvt:changed", "/metadata")
 
 
+def check_xmp_applied(file_path):
+    """JPG/RAW に crd:AlreadyApplied が書き込まれているか確認。失敗時は False を返す。"""
+    XMPFiles, _, _, consts = _libxmp()
+    try:
+        xf = XMPFiles(file_path=file_path, open_forupdate=False)
+        xmp = xf.get_xmp()
+        xf.close_file()
+        return xmp is not None and xmp.does_property_exist(consts.XMP_NS_CameraRaw, "AlreadyApplied")
+    except Exception:
+        return False
+
+
+def read_xmp_meta(file_path, meta_target):
+    """JPG の XMP から meta_target で指定されたプロパティを読む。
+    XMP が存在しない場合は None、存在するが値がない場合は空 dict を返す。"""
+    XMPFiles, _, _, consts = _libxmp()
+    try:
+        xf = XMPFiles(file_path=file_path, open_forupdate=False)
+        xmp = xf.get_xmp()
+        xf.close_file()
+        if xmp is None:
+            return None
+        result = {}
+        for prop in meta_target:
+            try:
+                result[prop] = xmp.get_property(consts.XMP_NS_XMP, prop)
+            except Exception:
+                pass
+        return result
+    except Exception:
+        return None
+
+
 def _sync_one_jpg(jpg_path, meta_target, sidecar_index):
     XMPFiles, XMPMeta, _, consts = _libxmp()
     stem = os.path.splitext(os.path.basename(jpg_path))[0]
