@@ -381,6 +381,49 @@ def _process_raw_xmp(raw_path):
     return sidecar_path
 
 
+def find_jpg_raw_pairs(jpg_dir, raw_dir, target_jpg_exts, target_raw_exts):
+    """jpg_dir と raw_dir でステムが一致するペアを返す [(jpg_path, raw_path), ...]。"""
+    raw_by_stem = {}
+    if os.path.isdir(raw_dir):
+        for f in os.listdir(raw_dir):
+            stem, dot_ext = os.path.splitext(f)
+            if dot_ext.lstrip(".").lower() in target_raw_exts:
+                raw_by_stem[stem] = os.path.join(raw_dir, f)
+    pairs = []
+    if os.path.isdir(jpg_dir):
+        for f in sorted(os.listdir(jpg_dir)):
+            stem, dot_ext = os.path.splitext(f)
+            if dot_ext.lstrip(".").lower() not in target_jpg_exts:
+                continue
+            raw_path = raw_by_stem.get(stem)
+            if raw_path:
+                pairs.append((os.path.join(jpg_dir, f), raw_path))
+    return pairs
+
+
+def restore_datetime_from_raw(jpg_path, raw_path):
+    """ペアの RAW から DateTimeOriginal/Digitized を読み、JPG EXIF に書き戻す。"""
+    exif_dt = _read_exif_datetimes(raw_path)
+    if not exif_dt.get("DateTimeOriginal") and not exif_dt.get("DateTimeDigitized"):
+        logger.warning(f"スキップ: RAW に撮影日時なし ({os.path.basename(raw_path)})")
+        return False
+    XMPFiles, XMPMeta, _, _ = _libxmp()
+    try:
+        with preserve_btime(jpg_path):
+            xmpfile = XMPFiles(file_path=jpg_path, open_forupdate=True)
+            xmp = xmpfile.get_xmp()
+            if xmp is None:
+                xmp = XMPMeta()
+            _restore_exif_dates_to_xmp(xmp, exif_dt)
+            xmpfile.put_xmp(xmp)
+            xmpfile.close_file()
+        logger.debug(f"復元: {os.path.basename(jpg_path)} ← {exif_dt.get('DateTimeOriginal')}")
+        return True
+    except Exception as e:
+        logger.error(f"復元エラー ({os.path.basename(jpg_path)}): {e}")
+        return False
+
+
 def write_exif_to_xmp(jpg_dirs, raw_dir, target_jpg_extensions, target_raw_extensions):
     # JPG / retouch ファイルへの書き込み（並列）
     jpg_paths = []

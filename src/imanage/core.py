@@ -627,7 +627,72 @@ class RecursiveCommand(BaseCommand):
                 iCon.syncmeta()
 
 
+class RestoreRawDatetimeCommand(BaseCommand):
+    def __init__(self, root: str):
+        self.root = os.path.abspath(root)
+        self.pair_dirs = None
+
+    def _collect_pairs(self):
+        from imanage.xmp_handler import find_jpg_raw_pairs
+        all_pairs = []
+        for pair_dir in self.pair_dirs:
+            iCon = imageContainer(pair_dir)
+            all_pairs.extend(find_jpg_raw_pairs(
+                iCon.jpg_dir_path, iCon.raw_dir_path,
+                target_jpg_extensions, target_raw_extensions,
+            ))
+        return all_pairs
+
+    def preview(self):
+        if self.pair_dirs is None:
+            self.pair_dirs = find_pair_dirs(self.root)
+        if not self.pair_dirs:
+            logger.info("[処理内容] jpg/raw 構造を持つディレクトリが見つかりませんでした")
+            return
+        from imanage.xmp_handler import find_jpg_raw_pairs
+        total = 0
+        logger.info(f"\n[RAW から DateTimeOriginal を復元]\n対象ディレクトリ: {len(self.pair_dirs)} 件\n")
+        for i, pair_dir in enumerate(self.pair_dirs, 1):
+            iCon = imageContainer(pair_dir)
+            pairs = find_jpg_raw_pairs(
+                iCon.jpg_dir_path, iCon.raw_dir_path,
+                target_jpg_extensions, target_raw_extensions,
+            )
+            rel = os.path.relpath(pair_dir, self.root)
+            logger.info(f"  [{i}] {rel}  JPG-RAW ペア: {len(pairs)} 件")
+            total += len(pairs)
+        logger.info(f"\n  合計: {total} 件の JPG を復元対象とします\n")
+
+    def setup(self):
+        if self.pair_dirs is None:
+            self.pair_dirs = find_pair_dirs(self.root)
+        if not self.pair_dirs:
+            logger.info("jpg/raw 構造を持つディレクトリが見つかりませんでした")
+            sys.exit(0)
+
+    def execute(self):
+        from imanage.xmp_handler import restore_datetime_from_raw
+        from concurrent.futures import ThreadPoolExecutor, as_completed as _as_completed
+        all_pairs = self._collect_pairs()
+        if not all_pairs:
+            logger.info("復元対象のペアが見つかりませんでした")
+            return
+        with ThreadPoolExecutor() as executor:
+            futures = {executor.submit(restore_datetime_from_raw, jpg, raw): jpg
+                       for jpg, raw in all_pairs}
+            with make_bar(_as_completed(futures), total=len(futures), desc="DateTimeOriginal 復元") as bar:
+                for future in bar:
+                    jpg = futures[future]
+                    bar.set_postfix_str(os.path.basename(jpg), refresh=False)
+                    try:
+                        future.result()
+                    except Exception as e:
+                        logger.error(f"復元エラー ({os.path.basename(jpg)}): {e}")
+
+
 def resolve_command(args):
+    if args.restore_raw_datetime is not None:
+        return RestoreRawDatetimeCommand(args.restore_raw_datetime)
     if args.recursive is not None:
         return RecursiveCommand(args.recursive)
     if args.meta:
@@ -660,6 +725,7 @@ def main():
     parser.add_argument('-l', '--link', action="store_true", help="(未使用)")
     parser.add_argument('-o', '--organize', action="store_true", help="jpg/raw を作成日時ごとの日付フォルダ (YYYYMMDD/jpg, YYYYMMDD/raw) に仕分ける")
     parser.add_argument('-R', '--recursive', metavar='PATH', nargs='?', const='.', help="PATH 配下の jpg/raw 構造を持つすべてのディレクトリに -s を適用する")
+    parser.add_argument('-RRR', '--restore-raw-datetime', metavar='PATH', nargs='?', const='.', help="ペアの RAW から DateTimeOriginal/Digitized を JPG EXIF に復元する")
     parser.add_argument('-q', '--quiet', action='store_true', help="エラーのみ出力する（スクリプト用）")
     parser.add_argument('-v', '--verbose', action='store_true', help="ファイル単位の処理詳細も表示する")
     parser.add_argument('--log-file', metavar='PATH', nargs='?',
