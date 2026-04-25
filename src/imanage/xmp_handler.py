@@ -60,16 +60,46 @@ _EXIF_DT_TAGS = {
 
 def _read_exif_datetimes(file_path):
     """撮影日時 EXIF タグを読んで dict で返す。失敗時は空 dict。
-    getexif() は JPEG・TIFF 両対応の公開 API (Pillow 6.0+)。
-    _getexif() は JPEG 専用のため ARW/RAW では AttributeError になる。"""
+    JPEG は PIL getexif() で読む。ARW 等 PIL が開けない RAW は exiftool にフォールバック。"""
     from PIL import Image
     try:
         exif_data = Image.open(file_path).getexif()
+        if exif_data:
+            result = {name: exif_data[tag] for name, tag in _EXIF_DT_TAGS.items() if tag in exif_data}
+            if result:
+                return result
     except Exception:
+        pass
+    return _read_exif_datetimes_exiftool(file_path)
+
+
+def _read_exif_datetimes_exiftool(file_path):
+    """exiftool サブプロセス経由で撮影日時タグを読む（PIL が開けない RAW ファイル用）。"""
+    import subprocess, json
+    try:
+        r = subprocess.run(
+            ["exiftool", "-json",
+             "-DateTimeOriginal", "-DateTimeDigitized",
+             "-OffsetTimeOriginal", "-OffsetTimeDigitized",
+             file_path],
+            capture_output=True, text=True, timeout=10,
+        )
+        if r.returncode != 0 or not r.stdout.strip():
+            return {}
+        data = json.loads(r.stdout)[0]
+        mapping = {
+            "DateTimeOriginal":  data.get("DateTimeOriginal"),
+            "DateTimeDigitized": data.get("DateTimeDigitized"),
+            "OffsetTimeOriginal":  data.get("OffsetTimeOriginal"),
+            "OffsetTimeDigitized": data.get("OffsetTimeDigitized"),
+        }
+        return {k: v for k, v in mapping.items() if v}
+    except FileNotFoundError:
+        logger.debug("exiftool が見つかりません。RAW の撮影日時を読み飛ばします。")
         return {}
-    if not exif_data:
+    except Exception as e:
+        logger.debug(f"exiftool 読み取り失敗 ({os.path.basename(file_path)}): {e}")
         return {}
-    return {name: exif_data[tag] for name, tag in _EXIF_DT_TAGS.items() if tag in exif_data}
 
 
 def _exif_dt_to_xmp(dt_str, offset=None):
