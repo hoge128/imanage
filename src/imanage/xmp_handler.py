@@ -59,11 +59,15 @@ _EXIF_DT_TAGS = {
 
 
 def _read_exif_datetimes(file_path):
-    """撮影日時 EXIF タグを読んで dict で返す。失敗時は空 dict。"""
+    """撮影日時 EXIF タグを読んで dict で返す。失敗時は空 dict。
+    getexif() は JPEG・TIFF 両対応の公開 API (Pillow 6.0+)。
+    _getexif() は JPEG 専用のため ARW/RAW では AttributeError になる。"""
     from PIL import Image
     try:
-        exif_data = Image.open(file_path)._getexif() or {}
+        exif_data = Image.open(file_path).getexif()
     except Exception:
+        return {}
+    if not exif_data:
         return {}
     return {name: exif_data[tag] for name, tag in _EXIF_DT_TAGS.items() if tag in exif_data}
 
