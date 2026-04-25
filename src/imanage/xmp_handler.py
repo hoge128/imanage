@@ -50,6 +50,49 @@ def read_exif(file_path):
     return result
 
 
+_EXIF_DT_TAGS = {
+    "DateTimeOriginal":  36867,
+    "DateTimeDigitized": 36868,
+    "OffsetTimeOriginal":  36880,
+    "OffsetTimeDigitized": 36881,
+}
+
+
+def _read_exif_datetimes(file_path):
+    """撮影日時 EXIF タグを読んで dict で返す。失敗時は空 dict。"""
+    from PIL import Image
+    try:
+        exif_data = Image.open(file_path)._getexif() or {}
+    except Exception:
+        return {}
+    return {name: exif_data[tag] for name, tag in _EXIF_DT_TAGS.items() if tag in exif_data}
+
+
+def _exif_dt_to_xmp(dt_str, offset=None):
+    """EXIF 日時文字列 "YYYY:MM:DD HH:MM:SS" を XMP ISO-8601 形式に変換する。"""
+    dt = datetime.strptime(dt_str[:19], "%Y:%m:%d %H:%M:%S")
+    return dt.strftime("%Y-%m-%dT%H:%M:%S") + (offset or "")
+
+
+def _restore_exif_dates_to_xmp(xmp, exif_dt):
+    """_remove_unwanted_namespaces で消えた DateTimeOriginal/Digitized を XMP に再注入する。
+    put_xmp() 時に exempi が XMP→EXIF 同期し、EXIF タグ 0x9003/0x9004 を復元する。"""
+    if not exif_dt:
+        return
+    _, _, _, consts = _libxmp()
+    for prop, off_prop in (("DateTimeOriginal", "OffsetTimeOriginal"),
+                           ("DateTimeDigitized", "OffsetTimeDigitized")):
+        raw = exif_dt.get(prop)
+        if not raw:
+            continue
+        try:
+            iso = _exif_dt_to_xmp(raw, exif_dt.get(off_prop))
+        except Exception as e:
+            logger.debug(f"EXIF {prop} 変換失敗 ({raw!r}): {e}")
+            continue
+        xmp.set_property(consts.XMP_NS_EXIF, prop, iso)
+
+
 def apply_exif_to_xmp(xmp, exif, file_path):
     _, _, _, consts = _libxmp()
     if "lens" in exif:
@@ -290,6 +333,7 @@ def is_already_applied(jpg_dirs: list, raw_dir: str, target_jpg_extensions: set)
 def _process_jpg_xmp(jpg_path):
     XMPFiles, XMPMeta, _, _ = _libxmp()
     try:
+        exif_dt = _read_exif_datetimes(jpg_path)
         with preserve_btime(jpg_path):
             xmpfile = XMPFiles(file_path=jpg_path, open_forupdate=True)
             xmp = xmpfile.get_xmp()
@@ -299,6 +343,7 @@ def _process_jpg_xmp(jpg_path):
             exif = read_exif(jpg_path)
             apply_exif_to_xmp(xmp, exif, jpg_path)
             _apply_workflow_metadata(xmp, jpg_path)
+            _restore_exif_dates_to_xmp(xmp, exif_dt)
             xmpfile.put_xmp(xmp)
             xmpfile.close_file()
     except Exception as e:
