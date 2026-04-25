@@ -50,6 +50,83 @@ def read_exif(file_path):
     return result
 
 
+_EXIF_DT_TAGS = {
+    "DateTimeOriginal":  36867,
+    "DateTimeDigitized": 36868,
+    "OffsetTimeOriginal":  36880,
+    "OffsetTimeDigitized": 36881,
+}
+
+
+def _read_exif_datetimes(file_path):
+    """撮影日時 EXIF タグを読んで dict で返す。失敗時は空 dict。
+    JPEG は PIL getexif() で読む。ARW 等 PIL が開けない RAW は exiftool にフォールバック。"""
+    from PIL import Image
+    try:
+        exif_data = Image.open(file_path).getexif()
+        if exif_data:
+            result = {name: exif_data[tag] for name, tag in _EXIF_DT_TAGS.items() if tag in exif_data}
+            if result:
+                return result
+    except Exception:
+        pass
+    return _read_exif_datetimes_exiftool(file_path)
+
+
+def _read_exif_datetimes_exiftool(file_path):
+    """exiftool サブプロセス経由で撮影日時タグを読む（PIL が開けない RAW ファイル用）。"""
+    import subprocess, json
+    try:
+        r = subprocess.run(
+            ["exiftool", "-json",
+             "-DateTimeOriginal", "-DateTimeDigitized",
+             "-OffsetTimeOriginal", "-OffsetTimeDigitized",
+             file_path],
+            capture_output=True, text=True, timeout=10,
+        )
+        if r.returncode != 0 or not r.stdout.strip():
+            return {}
+        data = json.loads(r.stdout)[0]
+        mapping = {
+            "DateTimeOriginal":  data.get("DateTimeOriginal"),
+            "DateTimeDigitized": data.get("DateTimeDigitized"),
+            "OffsetTimeOriginal":  data.get("OffsetTimeOriginal"),
+            "OffsetTimeDigitized": data.get("OffsetTimeDigitized"),
+        }
+        return {k: v for k, v in mapping.items() if v}
+    except FileNotFoundError:
+        logger.debug("exiftool が見つかりません。RAW の撮影日時を読み飛ばします。")
+        return {}
+    except Exception as e:
+        logger.debug(f"exiftool 読み取り失敗 ({os.path.basename(file_path)}): {e}")
+        return {}
+
+
+def _exif_dt_to_xmp(dt_str, offset=None):
+    """EXIF 日時文字列 "YYYY:MM:DD HH:MM:SS" を XMP ISO-8601 形式に変換する。"""
+    dt = datetime.strptime(dt_str[:19], "%Y:%m:%d %H:%M:%S")
+    return dt.strftime("%Y-%m-%dT%H:%M:%S") + (offset or "")
+
+
+def _restore_exif_dates_to_xmp(xmp, exif_dt):
+    """_remove_unwanted_namespaces で消えた DateTimeOriginal/Digitized を XMP に再注入する。
+    put_xmp() 時に exempi が XMP→EXIF 同期し、EXIF タグ 0x9003/0x9004 を復元する。"""
+    if not exif_dt:
+        return
+    _, _, _, consts = _libxmp()
+    for prop, off_prop in (("DateTimeOriginal", "OffsetTimeOriginal"),
+                           ("DateTimeDigitized", "OffsetTimeDigitized")):
+        raw = exif_dt.get(prop)
+        if not raw:
+            continue
+        try:
+            iso = _exif_dt_to_xmp(raw, exif_dt.get(off_prop))
+        except Exception as e:
+            logger.debug(f"EXIF {prop} 変換失敗 ({raw!r}): {e}")
+            continue
+        xmp.set_property(consts.XMP_NS_EXIF, prop, iso)
+
+
 def apply_exif_to_xmp(xmp, exif, file_path):
     _, _, _, consts = _libxmp()
     if "lens" in exif:
@@ -290,6 +367,7 @@ def is_already_applied(jpg_dirs: list, raw_dir: str, target_jpg_extensions: set)
 def _process_jpg_xmp(jpg_path):
     XMPFiles, XMPMeta, _, _ = _libxmp()
     try:
+        exif_dt = _read_exif_datetimes(jpg_path)
         with preserve_btime(jpg_path):
             xmpfile = XMPFiles(file_path=jpg_path, open_forupdate=True)
             xmp = xmpfile.get_xmp()
@@ -299,6 +377,7 @@ def _process_jpg_xmp(jpg_path):
             exif = read_exif(jpg_path)
             apply_exif_to_xmp(xmp, exif, jpg_path)
             _apply_workflow_metadata(xmp, jpg_path)
+            _restore_exif_dates_to_xmp(xmp, exif_dt)
             xmpfile.put_xmp(xmp)
             xmpfile.close_file()
     except Exception as e:
@@ -334,6 +413,49 @@ def _process_raw_xmp(raw_path):
     except Exception as e:
         logger.error(f"XMP サイドカー書き込みエラー ({raw_path}): {e}")
     return sidecar_path
+
+
+def find_jpg_raw_pairs(jpg_dir, raw_dir, target_jpg_exts, target_raw_exts):
+    """jpg_dir と raw_dir でステムが一致するペアを返す [(jpg_path, raw_path), ...]。"""
+    raw_by_stem = {}
+    if os.path.isdir(raw_dir):
+        for f in os.listdir(raw_dir):
+            stem, dot_ext = os.path.splitext(f)
+            if dot_ext.lstrip(".").lower() in target_raw_exts:
+                raw_by_stem[stem] = os.path.join(raw_dir, f)
+    pairs = []
+    if os.path.isdir(jpg_dir):
+        for f in sorted(os.listdir(jpg_dir)):
+            stem, dot_ext = os.path.splitext(f)
+            if dot_ext.lstrip(".").lower() not in target_jpg_exts:
+                continue
+            raw_path = raw_by_stem.get(stem)
+            if raw_path:
+                pairs.append((os.path.join(jpg_dir, f), raw_path))
+    return pairs
+
+
+def restore_datetime_from_raw(jpg_path, raw_path):
+    """ペアの RAW から DateTimeOriginal/Digitized を読み、JPG EXIF に書き戻す。"""
+    exif_dt = _read_exif_datetimes(raw_path)
+    if not exif_dt.get("DateTimeOriginal") and not exif_dt.get("DateTimeDigitized"):
+        logger.warning(f"スキップ: RAW に撮影日時なし ({os.path.basename(raw_path)})")
+        return False
+    XMPFiles, XMPMeta, _, _ = _libxmp()
+    try:
+        with preserve_btime(jpg_path):
+            xmpfile = XMPFiles(file_path=jpg_path, open_forupdate=True)
+            xmp = xmpfile.get_xmp()
+            if xmp is None:
+                xmp = XMPMeta()
+            _restore_exif_dates_to_xmp(xmp, exif_dt)
+            xmpfile.put_xmp(xmp)
+            xmpfile.close_file()
+        logger.debug(f"復元: {os.path.basename(jpg_path)} ← {exif_dt.get('DateTimeOriginal')}")
+        return True
+    except Exception as e:
+        logger.error(f"復元エラー ({os.path.basename(jpg_path)}): {e}")
+        return False
 
 
 def write_exif_to_xmp(jpg_dirs, raw_dir, target_jpg_extensions, target_raw_extensions):
