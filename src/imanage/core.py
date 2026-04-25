@@ -725,7 +725,7 @@ def main():
     parser.add_argument('-l', '--link', action="store_true", help="(未使用)")
     parser.add_argument('-o', '--organize', action="store_true", help="jpg/raw を作成日時ごとの日付フォルダ (YYYYMMDD/jpg, YYYYMMDD/raw) に仕分ける")
     parser.add_argument('-R', '--recursive', metavar='PATH', nargs='?', const='.', help="PATH 配下の jpg/raw 構造を持つすべてのディレクトリに -s を適用する")
-    parser.add_argument('-RRR', '--restore-raw-datetime', metavar='PATH', nargs='?', const='.', help="ペアの RAW から DateTimeOriginal/Digitized を JPG EXIF に復元する")
+    parser.add_argument('-RRR', '--restore-raw-datetime', metavar='PATH', nargs='?', const='.', help="ペアの RAW から DateTimeOriginal/Digitized を JPG EXIF に復元する（2026-04-25 以前に imanage を適用したファイルの修復用）")
     parser.add_argument('-q', '--quiet', action='store_true', help="エラーのみ出力する（スクリプト用）")
     parser.add_argument('-v', '--verbose', action='store_true', help="ファイル単位の処理詳細も表示する")
     parser.add_argument('--log-file', metavar='PATH', nargs='?',
