@@ -148,13 +148,16 @@ class OrganizeCommand(BaseCommand):
         all_exts = target_jpg_extensions | target_raw_extensions
         loose = [f for f in os.listdir(path)
                  if os.path.isfile(os.path.join(path, f)) and not f.startswith('.')
-                 and os.path.splitext(f)[1].lstrip('.').lower() in all_exts]
+                 and (os.path.splitext(f)[1].lstrip('.').lower() in all_exts
+                      or os.path.splitext(f)[1].lower() == '.xmp')]
         hierarchy = _config.get("organize", {}).get("hierarchy", ["date"])
         logger.info("[処理内容]")
         if loose:
-            # JPG を先に処理することで RAW が同名 JPG の EXIF を参照できるようにソート
+            # JPG → RAW → XMP の順で処理することで XMP が同名 JPG の EXIF を参照できるようにソート
             loose_sorted = sorted(loose, key=lambda f: (
-                0 if os.path.splitext(f)[1].lstrip('.').lower() in target_jpg_extensions else 1, f
+                0 if os.path.splitext(f)[1].lstrip('.').lower() in target_jpg_extensions
+                else 2 if os.path.splitext(f)[1].lower() == '.xmp'
+                else 1, f
             ))
             loose_exif = {}
             dest_groups = {}
@@ -170,6 +173,12 @@ class OrganizeCommand(BaseCommand):
                         except Exception:
                             pass
                         dir_name = retouch_dir_name if is_retouched(fp) else jpg_dir_name
+                    elif ext == 'xmp':
+                        paired_exts = {os.path.splitext(g)[1].lstrip('.') for g in loose if os.path.splitext(g)[0] == stem}
+                        if paired_exts & target_raw_extensions or not (paired_exts & target_jpg_extensions):
+                            dir_name = raw_dir_name
+                        else:
+                            dir_name = jpg_dir_name
                     else:
                         dir_name = raw_dir_name
                     fields = _resolve_fields(fp, stem, loose_exif)
@@ -802,6 +811,7 @@ def dir_structure():
         with make_bar(files, desc="ファイル振り分け") as bar:
             for _file in bar:
                 bar.set_postfix_str(_file, refresh=False)
+                stem = os.path.splitext(_file)[0]
                 ext = os.path.splitext(_file)[1].lstrip(".")
                 file_path = os.path.join(os.getcwd(), _file)
                 if ext in target_jpg_extensions:
@@ -815,6 +825,14 @@ def dir_structure():
                     if btime_safe_move(file_path, iCon.raw_dir_path):
                         if j:
                             j.record_move(file_path, os.path.join(iCon.raw_dir_path, _file))
+                    else:
+                        skipped.append(file_path)
+                elif ext.lower() == 'xmp':
+                    paired_exts = {os.path.splitext(f)[1].lstrip('.') for f in files if os.path.splitext(f)[0] == stem}
+                    dest = iCon.raw_dir_path if (paired_exts & target_raw_extensions or not (paired_exts & target_jpg_extensions)) else iCon.jpg_dir_path
+                    if btime_safe_move(file_path, dest):
+                        if j:
+                            j.record_move(file_path, os.path.join(dest, _file))
                     else:
                         skipped.append(file_path)
                 elif os.path.isfile(file_path) and not _file.startswith("."):
@@ -844,6 +862,7 @@ class imageContainer:
         with make_bar(files, desc="ファイル振り分け") as bar:
             for _file in bar:
                 bar.set_postfix_str(_file, refresh=False)
+                stem = os.path.splitext(_file)[0]
                 ext = os.path.splitext(_file)[1].lstrip(".")
                 file_path = os.path.join(self.base_dir, _file)
                 if ext in target_jpg_extensions:
@@ -857,6 +876,14 @@ class imageContainer:
                     if btime_safe_move(file_path, self.raw_dir_path):
                         if j:
                             j.record_move(file_path, os.path.join(self.raw_dir_path, _file))
+                    else:
+                        skipped.append(file_path)
+                elif ext.lower() == 'xmp':
+                    paired_exts = {os.path.splitext(f)[1].lstrip('.') for f in files if os.path.splitext(f)[0] == stem}
+                    dest = self.raw_dir_path if (paired_exts & target_raw_extensions or not (paired_exts & target_jpg_extensions)) else self.jpg_dir_path
+                    if btime_safe_move(file_path, dest):
+                        if j:
+                            j.record_move(file_path, os.path.join(dest, _file))
                     else:
                         skipped.append(file_path)
                 elif os.path.isfile(file_path) and not _file.startswith("."):
