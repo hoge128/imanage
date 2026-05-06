@@ -65,3 +65,4 @@ target_raw_extensions = [
 #   <cwd>/Unknown/Unknown/20230807/raw/DSC00001.ARW
 [organize]
 hierarchy = ["maker", "model", "date"]
+# destination = "~/Pictures/imanage_archive"  # -O / -OOO のデフォルト出力先

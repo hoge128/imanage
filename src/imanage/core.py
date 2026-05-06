@@ -17,7 +17,7 @@ logger = logging.getLogger("imanage.core")
 
 
 def load_config():
-    default = {"organize": {"hierarchy": ["maker", "model", "date"]}}
+    default = {"organize": {"hierarchy": ["maker", "model", "date"], "destination": None}}
 
     if getattr(sys, 'frozen', False):
         bundled = os.path.join(sys._MEIPASS, "imanage", "config.toml")
@@ -143,8 +143,29 @@ class BaseCommand:
 
 
 class OrganizeCommand(BaseCommand):
-    def preview(self):
-        path = os.getcwd()
+    def __init__(self, recursive: bool = False, dest_spec: str | None = None):
+        # dest_spec: None=in-place, ''=config の destination, str=CLI 指定パス
+        self.recursive = recursive
+        self.dest_spec = dest_spec
+        self.dest_root: str | None = None
+        self.targets: list[str] = []
+        self.iCons: list = []
+        self._exif_caches: dict[str, dict] = {}
+
+    def _resolve_dest_root(self) -> str | None:
+        if self.dest_spec is None:
+            return None
+        if self.dest_spec == '':
+            dest = _config.get("organize", {}).get("destination")
+            if not dest:
+                logger.error("config に [organize] destination が未設定です。"
+                             "~/.config/imanage/config.toml に destination を追加するか "
+                             "-O DEST のように CLI で指定してください。")
+                sys.exit(2)
+            return os.path.abspath(os.path.expanduser(dest))
+        return os.path.abspath(os.path.expanduser(self.dest_spec))
+
+    def _preview_single(self, path: str, hierarchy: list[str]):
         all_exts = target_jpg_extensions | target_raw_extensions
         loose = [f for f in os.listdir(path)
                  if os.path.isfile(os.path.join(path, f)) and not f.startswith('.')
@@ -184,20 +205,18 @@ class OrganizeCommand(BaseCommand):
                     fields = _resolve_fields(fp, stem, loose_exif)
                     dest_key = os.path.join(*[fields.get(h, "Unknown") for h in hierarchy], dir_name)
                     dest_groups[dest_key] = dest_groups.get(dest_key, 0) + 1
-            self._exif_cache = loose_exif
-
+            self._exif_caches[path] = loose_exif
             logger.info(f"  ルーズファイル {len(loose)} 件を振り分け後、以下へ整理します:")
             for dest, count in sorted(dest_groups.items()):
                 logger.info(f"    {dest}/  ({count} 件)")
             return
 
-        # ルーズファイルなし → EXIF を読んで実際の移動先を表示
         jpg_dir = os.path.join(path, jpg_dir_name)
         retouch_dir = os.path.join(path, retouch_dir_name)
         exif_cache = build_exif_cache(jpg_dir)
         if os.path.isdir(retouch_dir):
             exif_cache.update(build_exif_cache(retouch_dir))
-        self._exif_cache = exif_cache
+        self._exif_caches[path] = exif_cache
 
         all_files = []
         for dir_path, dir_name in [
@@ -226,19 +245,54 @@ class OrganizeCommand(BaseCommand):
         for dest, count in sorted(dest_groups.items()):
             logger.info(f"    {dest}/  ({count} 件)")
 
+    def preview(self):
+        self.dest_root = self._resolve_dest_root()
+        hierarchy = _config.get("organize", {}).get("hierarchy", ["date"])
+        logger.info("[処理内容]")
+        dest_label = self.dest_root if self.dest_root else "(各ディレクトリ内・in-place)"
+        logger.info(f"  整理先: {dest_label}")
+
+        if self.recursive:
+            self.targets = find_organize_targets(os.getcwd())
+            if not self.targets:
+                logger.info("  整理対象ディレクトリが見つかりませんでした")
+                return
+            logger.info(f"  対象ディレクトリ: {len(self.targets)} 件\n")
+            for t in self.targets:
+                rel = os.path.relpath(t, os.getcwd())
+                logger.info(f"  [{rel}]")
+                self._preview_single(t, hierarchy)
+        else:
+            self.targets = [os.getcwd()]
+            self._preview_single(os.getcwd(), hierarchy)
+
     def setup(self):
-        self.iCon = dir_structure()
         self.config = _config
+        if not self.targets:
+            self.targets = [os.getcwd()] if not self.recursive else find_organize_targets(os.getcwd())
+        if not self.targets:
+            logger.info("整理対象ディレクトリが見つかりませんでした")
+            sys.exit(0)
+        for target in self.targets:
+            iCon = dir_structure(path=target)
+            if iCon is not None:
+                self.iCons.append((iCon, target))
 
     def execute(self):
-        self.iCon.date_organize(self.config, exif_cache=getattr(self, '_exif_cache', None))
+        for iCon, target in self.iCons:
+            iCon.date_organize(
+                self.config,
+                exif_cache=self._exif_caches.get(target),
+                dest_root=self.dest_root,
+            )
 
     def teardown(self):
-        for d in [self.iCon.jpg_dir_path, self.iCon.raw_dir_path, self.iCon.retouch_dir_path]:
-            try:
-                os.rmdir(d)
-            except OSError:
-                pass
+        for iCon, _ in self.iCons:
+            for d in [iCon.jpg_dir_path, iCon.raw_dir_path, iCon.retouch_dir_path]:
+                try:
+                    os.rmdir(d)
+                except OSError:
+                    pass
 
 
 class DeleteCommand(BaseCommand):
@@ -332,8 +386,9 @@ class SyncCommand(BaseCommand):
 
 
 class DefaultCommand(BaseCommand):
+    xmp: bool = False
+
     def preview(self):
-        from imanage.xmp_handler import check_xmp_applied
         path = os.getcwd()
         files = [f for f in os.listdir(path)
                  if os.path.isfile(os.path.join(path, f)) and not f.startswith('.')]
@@ -356,36 +411,35 @@ class DefaultCommand(BaseCommand):
         if loose_raw:
             logger.info(f"  RAW {len(loose_raw)} 件 → {os.path.join(path, raw_dir_name)}/")
 
-        # XMP 処理状況を確認（ルーズ JPG + 既存 jpg/retouch ディレクトリ内）
-        xmp_pending = len(loose_jpg)  # ルーズファイルは未処理確定
-        xmp_done = 0
-        dir_jpg_files = []
-        for dn in [jpg_dir_name, retouch_dir_name]:
-            dp = os.path.join(path, dn)
-            if not os.path.isdir(dp):
-                continue
-            for f in os.listdir(dp):
-                if os.path.splitext(f)[1].lstrip('.').lower() not in target_jpg_extensions:
+        if self.xmp:
+            from imanage.xmp_handler import check_xmp_applied
+            xmp_pending = len(loose_jpg)
+            xmp_done = 0
+            dir_jpg_files = []
+            for dn in [jpg_dir_name, retouch_dir_name]:
+                dp = os.path.join(path, dn)
+                if not os.path.isdir(dp):
                     continue
-                fp = os.path.join(dp, f)
-                if os.path.isfile(fp):
-                    dir_jpg_files.append(fp)
-        with make_bar(dir_jpg_files, desc="XMP確認") as bar:
-            for fp in bar:
-                bar.set_postfix_str(os.path.basename(fp), refresh=False)
-                if check_xmp_applied(fp):
-                    xmp_done += 1
-                else:
-                    xmp_pending += 1
-
-        if xmp_pending:
-            logger.info(f"  XMP 書き込み: {xmp_pending} 件")
-        if xmp_done:
-            logger.info(f"  XMP 処理済み: {xmp_done} 件 (スキップ)")
+                for f in os.listdir(dp):
+                    if os.path.splitext(f)[1].lstrip('.').lower() not in target_jpg_extensions:
+                        continue
+                    fp = os.path.join(dp, f)
+                    if os.path.isfile(fp):
+                        dir_jpg_files.append(fp)
+            with make_bar(dir_jpg_files, desc="XMP確認") as bar:
+                for fp in bar:
+                    bar.set_postfix_str(os.path.basename(fp), refresh=False)
+                    if check_xmp_applied(fp):
+                        xmp_done += 1
+                    else:
+                        xmp_pending += 1
+            if xmp_pending:
+                logger.info(f"  XMP 書き込み: {xmp_pending} 件")
+            if xmp_done:
+                logger.info(f"  XMP 処理済み: {xmp_done} 件 (スキップ)")
 
     def setup(self):
         self.iCon = dir_structure()
-        # base_dir に未振り分けの画像ファイルが残っているか確認
         all_exts = target_jpg_extensions | target_raw_extensions
         loose = [
             f for f in os.listdir(self.iCon.base_dir)
@@ -393,16 +447,19 @@ class DefaultCommand(BaseCommand):
             and not f.startswith('.')
             and os.path.splitext(f)[1].lstrip('.').lower() in all_exts
         ]
-        from imanage.xmp_handler import is_already_applied
-        xmp_done = is_already_applied(
-            [self.iCon.jpg_dir_path, self.iCon.retouch_dir_path],
-            self.iCon.raw_dir_path,
-            target_jpg_extensions,
-        )
-        if loose or not xmp_done:
-            self.iCon.imagev()
-        else:
-            logger.info("既に処理済みです。スキップします。")
+        if self.xmp:
+            from imanage.xmp_handler import is_already_applied
+            xmp_done = is_already_applied(
+                [self.iCon.jpg_dir_path, self.iCon.retouch_dir_path],
+                self.iCon.raw_dir_path,
+                target_jpg_extensions,
+            )
+            if loose or not xmp_done:
+                self.iCon.imagev(write_xmp=True)
+            else:
+                logger.info("既に処理済みです。スキップします。")
+        elif loose:
+            self.iCon.imagev(write_xmp=False)
 
 
 def find_pair_dirs(root: str) -> list:
@@ -411,6 +468,25 @@ def find_pair_dirs(root: str) -> list:
         if jpg_dir_name in dirnames and raw_dir_name in dirnames:
             result.append(dirpath)
     return sorted(result)
+
+
+def find_organize_targets(root: str) -> list:
+    """loose ファイルまたは jpg/raw サブディレクトリを持つディレクトリを再帰的に列挙する。
+    jpg/raw/retouch サブディレクトリ自体には降りない（二重整理を抑止）。"""
+    managed = {jpg_dir_name, raw_dir_name, retouch_dir_name}
+    all_exts = target_jpg_extensions | target_raw_extensions
+    results = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = sorted(d for d in dirnames if d not in managed)
+        has_loose = any(
+            os.path.splitext(f)[1].lstrip('.').lower() in all_exts
+            for f in filenames if not f.startswith('.')
+        )
+        has_pair = (jpg_dir_name in os.listdir(dirpath)
+                    and raw_dir_name in os.listdir(dirpath))
+        if has_loose or has_pair:
+            results.append(dirpath)
+    return sorted(results)
 
 
 def _count_orphan_raws(iCon):
@@ -706,8 +782,14 @@ def resolve_command(args):
         return RecursiveCommand(args.recursive)
     if args.meta:
         return MetaCommand()
+    if args.organize_inplace_recursive:
+        return OrganizeCommand(recursive=True, dest_spec=None)
+    if args.organize_dest_recursive is not None:
+        return OrganizeCommand(recursive=True, dest_spec=args.organize_dest_recursive)
+    if args.organize_dest is not None:
+        return OrganizeCommand(recursive=False, dest_spec=args.organize_dest)
     if args.organize:
-        return OrganizeCommand()
+        return OrganizeCommand(recursive=False, dest_spec=None)
     if args.delete:
         return DeleteCommand()
     if args.sync:
@@ -740,7 +822,14 @@ def main():
     parser.add_argument('--log-file', metavar='PATH', nargs='?',
                         const=os.path.expanduser("~/.local/state/imanage/imanage.log"),
                         help="ログをファイルに出力する（PATH 省略時: ~/.local/state/imanage/imanage.log）")
+    parser.add_argument('-O', dest='organize_dest', metavar='DEST', nargs='?', const='', default=None,
+                        help="config の destination 配下に整理する（DEST 指定で上書き）")
+    parser.add_argument('-OOO', dest='organize_dest_recursive', metavar='DEST', nargs='?', const='', default=None,
+                        help="cwd 配下を再帰的に destination 配下へ整理する（DEST 指定で上書き）")
+    parser.add_argument('-ooo', dest='organize_inplace_recursive', action='store_true',
+                        help="cwd 配下を再帰的に各ディレクトリ内で整理する（in-place。初回の取り込み時に使用を推奨）")
     parser.add_argument('-m', '--meta', action='store_true', help="メタデータが未適用のファイルに XMP を書き込む")
+    parser.add_argument('--xmp', action='store_true', help="XMP メタデータを書き込む（デフォルトは無効）")
     parser.add_argument('--undo', action='store_true', help="直前の操作を取り消す")
     parser.add_argument('-y', '--yes', action='store_true', help="確認プロンプトをスキップして即実行する")
     args = parser.parse_args()
@@ -756,6 +845,8 @@ def main():
 
     cmd = resolve_command(args)
     cmd.yes = args.yes
+    if isinstance(cmd, DefaultCommand):
+        cmd.xmp = args.xmp
     cmd.preview()
     if not args.yes and cmd.needs_global_confirm:
         answer = input("\n続行しますか？ [y/N]: ").strip().lower()
@@ -782,8 +873,12 @@ def _has_target_files(dir_path):
     )
 
 
-def dir_structure():
-    path = os.getcwd()
+def dir_structure(path: str | None = None):
+    explicit_path = path is not None
+    if path is None:
+        path = os.getcwd()
+    else:
+        path = os.path.abspath(path)
 
     if not any(_has_target_files(d) for d in [
         path,
@@ -791,29 +886,31 @@ def dir_structure():
         os.path.join(path, raw_dir_name),
         os.path.join(path, retouch_dir_name),
     ]):
+        if explicit_path:
+            return None
         logger.info("対象ファイルが見つかりません。処理をスキップします。")
         sys.exit(0)
 
     current_dirs = {_file for _file in os.listdir(path) if os.path.isdir(os.path.join(path, _file))}
     if {jpg_dir_name, raw_dir_name} <= current_dirs:
-        iCon = imageContainer()
+        iCon = imageContainer(path)
     else:
         j = _journal.get_journal()
         for _dir in [jpg_dir_name, raw_dir_name, retouch_dir_name]:
             abs_dir = os.path.join(path, _dir)
             dir_is_new = not os.path.isdir(abs_dir)
-            os.makedirs(_dir, exist_ok=True)
+            os.makedirs(abs_dir, exist_ok=True)
             if dir_is_new and j:
                 j.record_mkdir(abs_dir)
-        iCon = imageContainer()
+        iCon = imageContainer(path)
         skipped = []
-        files = list(os.listdir(os.getcwd()))
+        files = list(os.listdir(path))
         with make_bar(files, desc="ファイル振り分け") as bar:
             for _file in bar:
                 bar.set_postfix_str(_file, refresh=False)
                 stem = os.path.splitext(_file)[0]
                 ext = os.path.splitext(_file)[1].lstrip(".")
-                file_path = os.path.join(os.getcwd(), _file)
+                file_path = os.path.join(path, _file)
                 if ext in target_jpg_extensions:
                     dest = iCon.retouch_dir_path if is_retouched(file_path) else iCon.jpg_dir_path
                     if btime_safe_move(file_path, dest):
@@ -855,7 +952,7 @@ class imageContainer:
     """
     jpg, raw の仕分け
     """
-    def imagev(self):
+    def imagev(self, write_xmp=True):
         skipped = []
         j = _journal.get_journal()
         files = list(os.listdir(self.base_dir))
@@ -888,20 +985,22 @@ class imageContainer:
                         skipped.append(file_path)
                 elif os.path.isfile(file_path) and not _file.startswith("."):
                     logger.warning(f"スキップ: {_file} は処理されません（対象外の拡張子）")
-        from imanage.xmp_handler import write_exif_to_xmp
-        write_exif_to_xmp(
-            [self.jpg_dir_path, self.retouch_dir_path],
-            self.raw_dir_path,
-            target_jpg_extensions,
-            target_raw_extensions,
-        )
+        if write_xmp:
+            from imanage.xmp_handler import write_exif_to_xmp
+            write_exif_to_xmp(
+                [self.jpg_dir_path, self.retouch_dir_path],
+                self.raw_dir_path,
+                target_jpg_extensions,
+                target_raw_extensions,
+            )
         if skipped:
             logger.warning(f"\n移動スキップ（移動先に同名ファイルが存在）: {len(skipped)} 件")
             for f in skipped:
                 logger.warning(f"  {f}")
 
-    def date_organize(self, config, exif_cache=None):
+    def date_organize(self, config, exif_cache=None, dest_root: str | None = None):
         hierarchy = config.get("organize", {}).get("hierarchy", ["date"])
+        root = dest_root if dest_root is not None else self.base_dir
         skipped = []
         j = _journal.get_journal()
 
@@ -929,7 +1028,7 @@ class imageContainer:
                 fields = _resolve_fields(file_path, stem, exif_cache)
 
                 path_parts = [fields.get(field, "Unknown") for field in hierarchy]
-                dest_dir = os.path.join(self.base_dir, *path_parts, dir_name)
+                dest_dir = os.path.join(root, *path_parts, dir_name)
                 dest_is_new = not os.path.isdir(dest_dir)
                 os.makedirs(dest_dir, exist_ok=True)
                 if dest_is_new and j:
