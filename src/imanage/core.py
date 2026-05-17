@@ -90,7 +90,10 @@ def get_exif_fields(jpg_path):
             timestamp = stat.st_birthtime
         except AttributeError:
             timestamp = stat.st_mtime
-        result["date"] = datetime.fromtimestamp(timestamp).strftime(date_format)
+        try:
+            result["date"] = datetime.fromtimestamp(timestamp).strftime(date_format)
+        except (OSError, OverflowError, ValueError):
+            result["date"] = "Unknown"
 
     return result
 
