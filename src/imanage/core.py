@@ -17,7 +17,7 @@ logger = logging.getLogger("imanage.core")
 
 
 def load_config():
-    default = {"organize": {"hierarchy": ["maker", "model", "date"], "destination": None}}
+    default = {"organize": {"hierarchy": ["maker", "model", "date"], "destination": None, "xmp_pair": "raw"}}
 
     if getattr(sys, 'frozen', False):
         bundled = os.path.join(sys._MEIPASS, "imanage", "config.toml")
@@ -136,6 +136,10 @@ def build_exif_cache(jpg_dir_path):
     return cache
 
 
+def _xmp_pair_is_jpg() -> bool:
+    return _config.get("organize", {}).get("xmp_pair", "raw") == "jpg"
+
+
 class BaseCommand:
     yes: bool = False
     needs_global_confirm: bool = True
@@ -198,11 +202,7 @@ class OrganizeCommand(BaseCommand):
                             pass
                         dir_name = retouch_dir_name if is_retouched(fp) else jpg_dir_name
                     elif ext == 'xmp':
-                        paired_exts = {os.path.splitext(g)[1].lstrip('.') for g in loose if os.path.splitext(g)[0] == stem}
-                        if paired_exts & target_raw_extensions or not (paired_exts & target_jpg_extensions):
-                            dir_name = raw_dir_name
-                        else:
-                            dir_name = jpg_dir_name
+                        dir_name = jpg_dir_name if _xmp_pair_is_jpg() else raw_dir_name
                     else:
                         dir_name = raw_dir_name
                     fields = _resolve_fields(fp, stem, loose_exif)
@@ -833,9 +833,13 @@ def main():
                         help="cwd 配下を再帰的に各ディレクトリ内で整理する（in-place。初回の取り込み時に使用を推奨）")
     parser.add_argument('-m', '--meta', action='store_true', help="メタデータが未適用のファイルに XMP を書き込む")
     parser.add_argument('--xmp', action='store_true', help="XMP メタデータを書き込む（デフォルトは無効）")
+    parser.add_argument('--xmp-pair', choices=['raw', 'jpg'], default=None,
+                        help="XMP サイドカーを raw/ と jpg/ のどちらに振り分けるか（config を上書き、デフォルト: raw）")
     parser.add_argument('--undo', action='store_true', help="直前の操作を取り消す")
     parser.add_argument('-y', '--yes', action='store_true', help="確認プロンプトをスキップして即実行する")
     args = parser.parse_args()
+    if args.xmp_pair is not None:
+        _config.setdefault("organize", {})["xmp_pair"] = args.xmp_pair
 
     from imanage.log import setup_logging
     from imanage.progress import set_quiet
@@ -928,8 +932,7 @@ def dir_structure(path: str | None = None):
                     else:
                         skipped.append(file_path)
                 elif ext.lower() == 'xmp':
-                    paired_exts = {os.path.splitext(f)[1].lstrip('.') for f in files if os.path.splitext(f)[0] == stem}
-                    dest = iCon.raw_dir_path if (paired_exts & target_raw_extensions or not (paired_exts & target_jpg_extensions)) else iCon.jpg_dir_path
+                    dest = iCon.jpg_dir_path if _xmp_pair_is_jpg() else iCon.raw_dir_path
                     if btime_safe_move(file_path, dest):
                         if j:
                             j.record_move(file_path, os.path.join(dest, _file))
@@ -979,8 +982,7 @@ class imageContainer:
                     else:
                         skipped.append(file_path)
                 elif ext.lower() == 'xmp':
-                    paired_exts = {os.path.splitext(f)[1].lstrip('.') for f in files if os.path.splitext(f)[0] == stem}
-                    dest = self.raw_dir_path if (paired_exts & target_raw_extensions or not (paired_exts & target_jpg_extensions)) else self.jpg_dir_path
+                    dest = self.jpg_dir_path if _xmp_pair_is_jpg() else self.raw_dir_path
                     if btime_safe_move(file_path, dest):
                         if j:
                             j.record_move(file_path, os.path.join(dest, _file))

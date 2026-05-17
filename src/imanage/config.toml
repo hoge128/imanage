@@ -66,3 +66,7 @@ target_raw_extensions = [
 [organize]
 hierarchy = ["maker", "model", "date"]
 # destination = "~/Pictures/imanage_archive"  # -O / -OOO のデフォルト出力先
+# xmp_pair: XMP サイドカーの振り分け先。"raw"（デフォルト）または "jpg"
+#   "raw": XMP は常に raw/ に振り分ける（JPG には XMP が埋め込まれている前提）
+#   "jpg": XMP は常に jpg/ に振り分ける
+# xmp_pair = "raw"
