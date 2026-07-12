@@ -59,6 +59,10 @@ final class SettingsStore {
     var xmpPairIsJpg: Bool {
         didSet { defaults.set(xmpPairIsJpg, forKey: Keys.xmpPairIsJpg) }
     }
+    /// 階層チップにホバー時の説明カードを表示するか（初期値 true）
+    var chipHelpEnabled: Bool {
+        didSet { defaults.set(chipHelpEnabled, forKey: Keys.chipHelpEnabled) }
+    }
 
     // [応用1] フォルダ監視
     var watcherEnabled: Bool {
@@ -82,6 +86,7 @@ final class SettingsStore {
         static let hierarchyPresets = "hierarchyPresets"
         static let defaultPresetID = "defaultPresetID"
         static let xmpPairIsJpg = "xmpPairIsJpg"
+        static let chipHelpEnabled = "chipHelpEnabled"
         static let watcherEnabled = "watcherEnabled"
         static let watcherSource = "watcherSourcePath"
         static let watcherDest = "watcherDestPath"
@@ -118,6 +123,7 @@ final class SettingsStore {
         self.defaultPresetID = defaults.string(forKey: Keys.defaultPresetID) ?? ""
 
         self.xmpPairIsJpg = defaults.bool(forKey: Keys.xmpPairIsJpg)
+        self.chipHelpEnabled = defaults.object(forKey: Keys.chipHelpEnabled) as? Bool ?? true
         self.watcherEnabled = defaults.bool(forKey: Keys.watcherEnabled)
         self.watcherSourcePath = defaults.string(forKey: Keys.watcherSource) ?? ""
         self.watcherDestPath = defaults.string(forKey: Keys.watcherDest) ?? ""

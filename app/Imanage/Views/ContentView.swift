@@ -11,7 +11,10 @@ struct ContentView: View {
 
         VStack(spacing: 0) {
             // 上部: 振り分け階層エディタ（適用 / 候補）。出力先の切替は移動先パネルへ集約。
+            // zIndex: チップの説明カード（オーバーレイ）が下のプレビュー領域に
+            // はみ出しても隠れないようにする。
             HierarchyBarView(settings: settings)
+                .zIndex(1)
             Divider()
 
             if let plan = store.plan {

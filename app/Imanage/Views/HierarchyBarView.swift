@@ -16,6 +16,9 @@ struct HierarchyBarView: View {
     @State private var appliedTargeted = false
     @State private var poolTargeted = false
 
+    /// dwell（一定時間ホバー）を経て表示が確定したヘルプ対象のフィールドキー
+    @State private var shownHelpKey: String?
+
     // プリセットメニューの状態
     @State private var showPresetMenu = false
     @State private var editingPresetID: UUID?
@@ -36,6 +39,47 @@ struct HierarchyBarView: View {
             candidatesBox
         }
         .padding(12)
+        // 説明カード: 描画専用オーバーレイ（ヒットテスト無効）としてバーの上に重ねる。
+        // .popover と違いウィンドウ/フォーカスに一切関与しないため、ドラッグを妨げない。
+        .overlayPreferenceValue(HelpAnchorKey.self) { anchors in
+            helpOverlay(anchors)
+        }
+    }
+
+    // MARK: - ヘルプオーバーレイ
+
+    @ViewBuilder
+    private func helpOverlay(_ anchors: [HelpAnchor]) -> some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .topLeading) {
+                // dwell 管理: ホバー対象が変わるたびに task(id:) が再スタートし、
+                // 450ms 留まったときだけ表示を確定する。外れたら即クリア。
+                Color.clear
+                    .task(id: anchors.first?.key) {
+                        guard let key = anchors.first?.key else {
+                            shownHelpKey = nil
+                            return
+                        }
+                        try? await Task.sleep(for: .milliseconds(450))
+                        if !Task.isCancelled { shownHelpKey = key }
+                    }
+
+                if let a = anchors.first,
+                   settings.chipHelpEnabled, dragging == nil,
+                   shownHelpKey == a.key,
+                   let field = HierarchyField.from(key: a.key) {
+                    let rect = proxy[a.anchor]
+                    let cardWidth: CGFloat = 240
+                    let x = min(max(rect.midX - cardWidth / 2, 8),
+                                max(8, proxy.size.width - cardWidth - 8))
+                    FieldHelpCard(field: field)
+                        .offset(x: x, y: rect.maxY + 8)
+                        .transition(.opacity)
+                }
+            }
+            .animation(.easeOut(duration: 0.12), value: shownHelpKey)
+        }
+        .allowsHitTesting(false)
     }
 
     // MARK: - 適用ボックス
@@ -95,6 +139,9 @@ struct HierarchyBarView: View {
         .background(Capsule().fill(Color.accentColor.opacity(0.15)))
         .overlay(Capsule().strokeBorder(Color.accentColor.opacity(0.4)))
         .opacity(dragging == field.key ? 0.35 : 1)
+        // ヘルプはホバー位置の報告のみ（プレゼンテーションなし）。カードは
+        // バーのルートに描画専用オーバーレイとして出すため、ドラッグに干渉しない。
+        .modifier(HelpAnchorModifier(fieldKey: field.key))
         .onDrag {
             dragging = field.key
             return NSItemProvider(object: field.key as NSString)
@@ -284,8 +331,15 @@ struct HierarchyBarView: View {
                 removeDragging()
             }
         } label: {
-            Label(String(localized: "候補フィールド"), systemImage: "square.grid.2x2")
-                .font(.subheadline)
+            HStack(spacing: 8) {
+                Label(String(localized: "候補フィールド"), systemImage: "square.grid.2x2")
+                    .font(.subheadline)
+                Toggle(String(localized: "ヘルプ"), isOn: $settings.chipHelpEnabled)
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                    .font(.caption)
+                Spacer()
+            }
         }
     }
 
@@ -309,6 +363,8 @@ struct HierarchyBarView: View {
         .padding(.vertical, 5)
         .background(Capsule().fill(.quaternary.opacity(0.5)))
         .opacity(dragging == field.key ? 0.35 : 1)
+        // ヘルプはホバー位置の報告のみ（appliedChip と同じ非干渉方式）
+        .modifier(HelpAnchorModifier(fieldKey: field.key))
         .onDrag {
             dragging = field.key
             return NSItemProvider(object: field.key as NSString)
@@ -353,6 +409,74 @@ struct HierarchyBarView: View {
             settings.hierarchy.removeAll { $0 == key }
         }
         return true
+    }
+}
+
+// MARK: - HelpAnchor / HelpAnchorModifier
+// チップの「ホバー中の位置」を PreferenceKey でバーのルートへ報告する。
+// プレゼンテーション（popover 等）を一切使わないため、ドラッグに干渉しない。
+
+private struct HelpAnchor: Equatable {
+    let key: String
+    let anchor: Anchor<CGRect>
+    static func == (l: Self, r: Self) -> Bool { l.key == r.key }
+}
+
+private struct HelpAnchorKey: PreferenceKey {
+    static let defaultValue: [HelpAnchor] = []
+    static func reduce(value: inout [HelpAnchor], nextValue: () -> [HelpAnchor]) {
+        value.append(contentsOf: nextValue())
+    }
+}
+
+private struct HelpAnchorModifier: ViewModifier {
+    let fieldKey: String
+    @State private var hovering = false
+
+    func body(content: Content) -> some View {
+        content
+            .onHover { hovering = $0 }
+            .anchorPreference(key: HelpAnchorKey.self, value: .bounds) {
+                hovering ? [HelpAnchor(key: fieldKey, anchor: $0)] : []
+            }
+    }
+}
+
+private struct FieldHelpCard: View {
+    let field: HierarchyField
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label(field.displayName, systemImage: field.systemImage)
+                .font(.headline)
+            Text(field.helpText)
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 3) {
+                helpRow(
+                    label: field.exifKey != nil
+                        ? String(localized: "EXIF") : String(localized: "由来"),
+                    value: field.exifKey ?? String(localized: "ファイル種別"))
+                helpRow(label: String(localized: "フォルダ例"), value: field.example)
+            }
+        }
+        .padding(14)
+        .frame(width: 240, alignment: .leading)
+        // オーバーレイ表示のため背景は自前で持つ（Liquid Glass）
+        .glassEffect(in: RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.18), radius: 12, y: 4)
+    }
+
+    private func helpRow(label: String, value: String) -> some View {
+        HStack(spacing: 8) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+                .frame(width: 68, alignment: .leading)
+            Text(value)
+                .font(.caption.monospaced())
+        }
     }
 }
 

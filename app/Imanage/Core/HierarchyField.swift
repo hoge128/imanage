@@ -62,6 +62,34 @@ enum HierarchyField: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    /// チップの説明（ヘルプカード用）
+    var helpText: String {
+        switch self {
+        case .maker:        String(localized: "カメラの製造元。同じメーカーの写真をまとめます。")
+        case .model:        String(localized: "カメラの機種名。ボディごとに分けられます。")
+        case .date:         String(localized: "撮影した日付。日単位でフォルダに分けます。")
+        case .creator:      String(localized: "作成者・著作者名。")
+        case .lens:         String(localized: "撮影に使用したレンズ名。")
+        case .focalLength:  String(localized: "撮影時の焦点距離。")
+        case .shutterSpeed: String(localized: "シャッター速度（露光時間）。")
+        case .pairing:      String(localized: "jpg / raw / retouch などファイル種別ごとにサブフォルダへ分けます（EXIF ではなく拡張子で判定）。")
+        }
+    }
+
+    /// 由来の EXIF フィールド名。EXIF 由来でない（ファイル種別）場合は nil。
+    var exifKey: String? {
+        switch self {
+        case .maker:        "Make"
+        case .model:        "Model"
+        case .date:         "DateTimeOriginal"
+        case .creator:      "Artist"
+        case .lens:         "LensModel"
+        case .focalLength:  "FocalLength"
+        case .shutterSpeed: "ExposureTime"
+        case .pairing:      nil
+        }
+    }
+
     /// config キーから HierarchyField を引く（未知キーは nil）
     static func from(key: String) -> HierarchyField? {
         HierarchyField(rawValue: key)
