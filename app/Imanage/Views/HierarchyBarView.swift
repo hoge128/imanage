@@ -454,11 +454,10 @@ private struct FieldHelpCard: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             VStack(alignment: .leading, spacing: 3) {
-                helpRow(
-                    label: field.exifKey != nil
-                        ? String(localized: "EXIF") : String(localized: "由来"),
-                    value: field.exifKey ?? String(localized: "ファイル種別"))
-                helpRow(label: String(localized: "フォルダ例"), value: field.example)
+                helpRow(label: field.sourceInfo.label, value: field.sourceInfo.value)
+                helpRow(label: field.exampleIsValueSet
+                            ? String(localized: "値の候補") : String(localized: "フォルダ例"),
+                        value: field.example)
             }
         }
         .padding(14)
@@ -469,7 +468,7 @@ private struct FieldHelpCard: View {
     }
 
     private func helpRow(label: String, value: String) -> some View {
-        HStack(spacing: 8) {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
             Text(label)
                 .font(.caption)
                 .foregroundStyle(.tertiary)
