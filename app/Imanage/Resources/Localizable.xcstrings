@@ -1,0 +1,1083 @@
+{
+  "sourceLanguage" : "ja",
+  "strings" : {
+    "%d 件" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d files"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 件"
+          }
+        }
+      }
+    },
+    "%d 件エラー" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d error(s)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 件エラー"
+          }
+        }
+      }
+    },
+    "%d 件スキップ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d skipped"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 件スキップ"
+          }
+        }
+      }
+    },
+    "%d 件スキップ（移動先に同名ファイル）" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d skipped (file already exists at destination)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 件スキップ（移動先に同名ファイル）"
+          }
+        }
+      }
+    },
+    "%d 件はゴミ箱から手動で復元してください" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d file(s) must be restored manually from Trash"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 件はゴミ箱から手動で復元してください"
+          }
+        }
+      }
+    },
+    "%d 件を振り分けました" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d file(s) organized"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 件を振り分けました"
+          }
+        }
+      }
+    },
+    "%d 件を自動振り分けしました" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d file(s) auto-organized"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d 件を自動振り分けしました"
+          }
+        }
+      }
+    },
+    "EXIF を解析中…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Analyzing EXIF…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EXIF を解析中…"
+          }
+        }
+      }
+    },
+    "imanage ペアリング" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "imanage pairing (jpg/raw)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "imanage ペアリング"
+          }
+        }
+      }
+    },
+    "imanage を開く" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open imanage"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "imanage を開く"
+          }
+        }
+      }
+    },
+    "JPG / RAW / XMP を EXIF で解析し、振り分け先をプレビューします" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Analyzes JPG / RAW / XMP files using EXIF and previews the destination folders"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JPG / RAW / XMP を EXIF で解析し、振り分け先をプレビューします"
+          }
+        }
+      }
+    },
+    "XMP サイドカーの振り分け先" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "XMP Sidecar Destination"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "XMP サイドカーの振り分け先"
+          }
+        }
+      }
+    },
+    "お気に入りから削除" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove from favorites"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "お気に入りから削除"
+          }
+        }
+      }
+    },
+    "クリア" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clear"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "クリア"
+          }
+        }
+      }
+    },
+    "クリックで選択、またはここにドロップ" : {
+      "comment" : "A description of how to add a folder by clicking or dropping.",
+      "isCommentAutoGenerated" : true
+    },
+    "ここにフィールドをドロップ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop a field here"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ここにフィールドをドロップ"
+          }
+        }
+      }
+    },
+    "この入力を削除" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove this input"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "この入力を削除"
+          }
+        }
+      }
+    },
+    "この振り分けを取り消します（CLI の imanage --undo と互換）" : {
+      "comment" : "A tooltip for the \"Undo\" button.",
+      "isCommentAutoGenerated" : true
+    },
+    "シャッター速度" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Shutter speed"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "シャッター速度"
+          }
+        }
+      }
+    },
+    "すべて使用中" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All in use"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべて使用中"
+          }
+        }
+      }
+    },
+    "すべて閉じる" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Collapse all"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべて閉じる"
+          }
+        }
+      }
+    },
+    "すべて開く" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand all"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべて開く"
+          }
+        }
+      }
+    },
+    "すべて開く（最下層以外）" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Expand all (except leaves)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "すべて開く（最下層以外）"
+          }
+        }
+      }
+    },
+    "ドロップにファイルが含まれていません" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No files found in the dropped items"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ドロップにファイルが含まれていません"
+          }
+        }
+      }
+    },
+    "ドロップ元と同じフォルダ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Same as source"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ドロップ元と同じフォルダ"
+          }
+        }
+      }
+    },
+    "ドロップ元と同じ場所" : {
+      "comment" : "A label for the \"Dropped\" menu item.",
+      "isCommentAutoGenerated" : true
+    },
+    "フォルダ / ファイルをここにドロップ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop a folder or files here"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォルダ / ファイルをここにドロップ"
+          }
+        }
+      }
+    },
+    "フォルダを追加" : {
+      "comment" : "A label displayed in the \"Add\" box.",
+      "isCommentAutoGenerated" : true
+    },
+    "フォルダを選択…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose Folder…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォルダを選択…"
+          }
+        }
+      }
+    },
+    "フォルダ未選択" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No folder selected"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォルダ未選択"
+          }
+        }
+      }
+    },
+    "フォルダ監視" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Folder Watch"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォルダ監視"
+          }
+        }
+      }
+    },
+    "フォルダ監視を有効にする" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable folder watching"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォルダ監視を有効にする"
+          }
+        }
+      }
+    },
+    "フォルダ監視中" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watching folder"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "フォルダ監視中"
+          }
+        }
+      }
+    },
+    "メーカー" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maker"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "メーカー"
+          }
+        }
+      }
+    },
+    "レンズ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lens"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "レンズ"
+          }
+        }
+      }
+    },
+    "作成者" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creator"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "作成者"
+          }
+        }
+      }
+    },
+    "保存した出力先" : {
+      "comment" : "A label for the list of saved output destinations.",
+      "isCommentAutoGenerated" : true
+    },
+    "候補フィールド" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Candidate fields"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "候補フィールド"
+          }
+        }
+      }
+    },
+    "元に戻す" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "元に戻す"
+          }
+        }
+      }
+    },
+    "元に戻す（ファイル振り分け）" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo Organize"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "元に戻す（ファイル振り分け）"
+          }
+        }
+      }
+    },
+    "入力を追加" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add input"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "入力を追加"
+          }
+        }
+      }
+    },
+    "写真ファイルをここにドロップ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Drop photo files here"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写真ファイルをここにドロップ"
+          }
+        }
+      }
+    },
+    "出力先" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destination"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "出力先"
+          }
+        }
+      }
+    },
+    "出力先とフォルダ階層はメイン画面上部で設定できます。" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set the destination and folder hierarchy at the top of the main window."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "出力先とフォルダ階層はメイン画面上部で設定できます。"
+          }
+        }
+      }
+    },
+    "出力先は移動先パネル、フォルダ階層はメイン画面上部で設定できます。" : {
+      "comment" : "A description of the folder hierarchy settings in the settings view.",
+      "isCommentAutoGenerated" : true
+    },
+    "出力先を選択" : {
+      "comment" : "A label displayed above the list of destination options.",
+      "isCommentAutoGenerated" : true
+    },
+    "別のフォルダ" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Separate folder"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "別のフォルダ"
+          }
+        }
+      }
+    },
+    "取り消し: %d 件成功" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undone: %d succeeded"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り消し: %d 件成功"
+          }
+        }
+      }
+    },
+    "取り消す操作がありません" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing to undo"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "取り消す操作がありません"
+          }
+        }
+      }
+    },
+    "合計 %d 件" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d total"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "合計 %d 件"
+          }
+        }
+      }
+    },
+    "振り分け" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Organize"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "振り分け"
+          }
+        }
+      }
+    },
+    "振り分けを実行" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Organize"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "振り分けを実行"
+          }
+        }
+      }
+    },
+    "振り分け先フォルダ（B）" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destination folder (B)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "振り分け先フォルダ（B）"
+          }
+        }
+      }
+    },
+    "振り分け先フォルダが未設定です（設定を確認してください）" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destination folder is not set (check Settings)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "振り分け先フォルダが未設定です（設定を確認してください）"
+          }
+        }
+      }
+    },
+    "振り分け対象のファイルがありません（対応拡張子: JPG / RAW / XMP）" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No organizable files found (supported: JPG / RAW / XMP)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "振り分け対象のファイルがありません（対応拡張子: JPG / RAW / XMP）"
+          }
+        }
+      }
+    },
+    "撮影日" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Date"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "撮影日"
+          }
+        }
+      }
+    },
+    "新規" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "新規"
+          }
+        }
+      }
+    },
+    "既定" : {
+      "comment" : "A label for a pin icon.",
+      "isCommentAutoGenerated" : true
+    },
+    "既定の出力先にする" : {
+      "comment" : "A tooltip for the \"Set as Default\" button.",
+      "isCommentAutoGenerated" : true
+    },
+    "既定を解除" : {
+      "comment" : "A label for unsetting a default destination.",
+      "isCommentAutoGenerated" : true
+    },
+    "機種" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "機種"
+          }
+        }
+      }
+    },
+    "焦点距離" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Focal length"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "焦点距離"
+          }
+        }
+      }
+    },
+    "現在の出力先を保存" : {
+      "comment" : "A label for a button that saves the current output path as a favorite.",
+      "isCommentAutoGenerated" : true
+    },
+    "現在の移動先をお気に入りに追加" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add current destination to favorites"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在の移動先をお気に入りに追加"
+          }
+        }
+      }
+    },
+    "監視中" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Watching"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "監視中"
+          }
+        }
+      }
+    },
+    "監視元フォルダ（A）" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source folder (A)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "監視元フォルダ（A）"
+          }
+        }
+      }
+    },
+    "監視元フォルダに追加されたファイルを自動で振り分け先へ整理します。処理中はメニューバーのアイコンが回転します。" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Automatically organizes files added to the source folder. The menu bar icon spins while processing."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "監視元フォルダに追加されたファイルを自動で振り分け先へ整理します。処理中はメニューバーのアイコンが回転します。"
+          }
+        }
+      }
+    },
+    "直前の振り分け操作を取り消します（CLI の imanage --undo と互換）" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo the last organize operation (compatible with imanage --undo)"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "直前の振り分け操作を取り消します（CLI の imanage --undo と互換）"
+          }
+        }
+      }
+    },
+    "移動元" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Source"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移動元"
+          }
+        }
+      }
+    },
+    "移動先" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Destination"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移動先"
+          }
+        }
+      }
+    },
+    "移動先（完了）" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Organized"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "移動先（完了）"
+          }
+        }
+      }
+    },
+    "空フォルダ %d 件をゴミ箱へ" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d empty folder(s) to Trash"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "空フォルダ %d 件をゴミ箱へ"
+          }
+        }
+      }
+    },
+    "終了" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quit"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "終了"
+          }
+        }
+      }
+    },
+    "適用する階層" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Applied hierarchy"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "適用する階層"
+          }
+        }
+      }
+    },
+    "選択…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose…"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "選択…"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.1"
+}

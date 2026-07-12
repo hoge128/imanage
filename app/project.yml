@@ -1,0 +1,53 @@
+name: Imanage
+
+options:
+  bundleIdPrefix: io.github.imanage
+  deploymentTarget:
+    macOS: "26.0"
+  xcodeVersion: "26.0"
+  generateEmptyDirectories: true
+
+schemes:
+  Imanage:
+    build:
+      targets:
+        Imanage: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
+
+targets:
+  Imanage:
+    type: application
+    platform: macOS
+    deploymentTarget: "26.0"
+    sources:
+      - path: Imanage
+    settings:
+      base:
+        SWIFT_VERSION: 6.0
+        MACOSX_DEPLOYMENT_TARGET: "26.0"
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.imanage
+        PRODUCT_NAME: Imanage
+        SWIFT_EMIT_LOC_STRINGS: YES
+        ENABLE_HARDENED_RUNTIME: YES
+    info:
+      path: Imanage/Resources/Info.plist
+      properties:
+        CFBundleName: Imanage
+        CFBundleDisplayName: Imanage
+        CFBundleIdentifier: io.github.imanage
+        CFBundleVersion: "1"
+        CFBundleShortVersionString: "0.1.0"
+        NSHumanReadableDescription: "EXIF-based photo file organizer"
+        NSHumanReadableCopyright: "Copyright © 2026 hoge128. All rights reserved."
+        LSApplicationCategoryType: "public.app-category.photography"
+        # メニューバー常駐（ウィンドウを閉じても Dock に残さない場合は true に変更）
+        LSUIElement: false

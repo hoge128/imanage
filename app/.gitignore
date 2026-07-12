@@ -1,0 +1,9 @@
+# macOS
+.DS_Store
+
+# Xcode - user-specific state / build products
+xcuserdata/
+*.xcuserstate
+build/
+DerivedData/
+*.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
