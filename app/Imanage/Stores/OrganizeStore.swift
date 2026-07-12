@@ -54,8 +54,9 @@ final class OrganizeStore {
 
     // MARK: - Drop & Preview
 
-    /// ドロップ受付。入力ユニットを 1 つ追加する（N:1）。
-    /// ファイルを含むフォルダはサブフォルダまで再帰的に収集する。
+    /// ドロップ受付。複数のファイル・フォルダに対応する。
+    /// フォルダは 1 フォルダ = 1 入力ユニット、ルーズファイルは親フォルダごとに
+    /// 1 ユニットにまとめる。ファイルを含むフォルダはサブフォルダまで再帰的に収集する。
     func handleDrop(_ urls: [URL]) {
         guard let settings, !isExecuting else { return }
         if didExecute { reset() }  // 完了後の新規ドロップは作り直し
@@ -68,24 +69,53 @@ final class OrganizeStore {
         statusMessage = nil
         Task {
             // ファイル収集（再帰）・EXIF スキャンはディスク I/O のため main 外で実行
-            let files = await Self.collectFiles(from: urls)
-            guard !files.isEmpty else {
-                self.isScanning = false
-                self.statusMessage = String(localized: "ドロップにファイルが含まれていません")
-                return
+            let groups = await Self.splitIntoUnitGroups(urls)
+            var added = 0
+            for group in groups {
+                let files = await Self.collectFiles(from: group)
+                guard !files.isEmpty else { continue }
+                let scan = await Self.scan(files: files, config: config)
+                guard !scan.scanned.isEmpty else { continue }
+                let root = Self.computeRootURL(droppedURLs: group)
+                self.inputUnits.append(InputUnit(
+                    id: UUID(), droppedURLs: group, rootURL: root, scan: scan))
+                added += 1
             }
-            let scan = await Self.scan(files: files, config: config)
-            guard !scan.scanned.isEmpty else {
-                self.isScanning = false
-                self.statusMessage = String(localized: "振り分け対象のファイルがありません（対応拡張子: JPG / RAW / XMP）")
-                return
-            }
-            let root = Self.computeRootURL(droppedURLs: urls)
-            self.inputUnits.append(InputUnit(
-                id: UUID(), droppedURLs: urls, rootURL: root, scan: scan))
             self.isScanning = false
+            guard added > 0 else {
+                self.statusMessage = self.inputUnits.isEmpty
+                    ? String(localized: "振り分け対象のファイルがありません（対応拡張子: JPG / RAW / XMP）")
+                    : String(localized: "追加分に振り分け対象のファイルがありません（対応拡張子: JPG / RAW / XMP）")
+                return
+            }
             self.rebuildPlan()
         }
+    }
+
+    /// ドロップされた URL 群を入力ユニット単位に分割する。
+    /// フォルダ → 1 フォルダで 1 グループ / ファイル → 親フォルダごとに 1 グループ。
+    /// グループ順はドロップ順（初出順）を保つ。
+    nonisolated private static func splitIntoUnitGroups(_ urls: [URL]) async -> [[URL]] {
+        let fm = FileManager.default
+        var groups: [[URL]] = []
+        var looseIndexByParent: [URL: Int] = [:]
+
+        for url in urls {
+            var isDir: ObjCBool = false
+            guard fm.fileExists(atPath: url.path, isDirectory: &isDir) else { continue }
+            if isDir.boolValue {
+                groups.append([url])
+            } else {
+                let parent = url.standardizedFileURL.deletingLastPathComponent()
+                if let i = looseIndexByParent[parent] {
+                    groups[i].append(url)
+                } else {
+                    looseIndexByParent[parent] = groups.count
+                    groups.append([url])
+                }
+            }
+        }
+        return groups
     }
 
     /// 入力ユニットを削除する。

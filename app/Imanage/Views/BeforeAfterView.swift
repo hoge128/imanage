@@ -226,10 +226,10 @@ struct BeforeAfterView: View {
                 Image(systemName: "plus.circle")
                     .font(.system(size: 28))
                     .foregroundStyle(isAddTargeted ? Color.accentColor : .secondary)
-                Text("フォルダを追加")
+                Text("ファイル / フォルダを追加")
                     .font(.callout)
                     .foregroundStyle(isAddTargeted ? Color.accentColor : .secondary)
-                Text("クリックで選択、またはここにドロップ")
+                Text("クリックで選択（複数可）、またはここにドロップ")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }
@@ -244,15 +244,23 @@ struct BeforeAfterView: View {
                                   style: StrokeStyle(lineWidth: 2, dash: [8])))
             .contentShape(RoundedRectangle(cornerRadius: 10))
             .onTapGesture {
-                if let url = DestinationMenu.pickFolder() {
-                    store.handleDrop([url])
-                }
+                let urls = Self.pickInputs()
+                if !urls.isEmpty { store.handleDrop(urls) }
             }
             .dropDestination(for: URL.self) { urls, _ in
                 store.handleDrop(urls)
                 return true
             } isTargeted: { isAddTargeted = $0 }
         }
+    }
+
+    /// 入力追加用の Finder 選択。ファイル・フォルダを複数選択できる。
+    private static func pickInputs() -> [URL] {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = true
+        return panel.runModal() == .OK ? panel.urls : []
     }
 
     // MARK: - 適用後パネル（プレビュー/振り分け後の構造 → グレー背景）
