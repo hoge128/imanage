@@ -70,23 +70,42 @@ final class OrganizeStore {
         Task {
             // ファイル収集（再帰）・EXIF スキャンはディスク I/O のため main 外で実行
             let groups = await Self.splitIntoUnitGroups(urls)
+
+            // 既に追加済みの項目（同一パス）は重複タブにしない
+            var existing = Set(inputUnits.flatMap { unit in
+                unit.droppedURLs.map { $0.standardizedFileURL.path }
+            })
             var added = 0
+            var duplicates = 0
             for group in groups {
-                let files = await Self.collectFiles(from: group)
+                let fresh = group.filter { !existing.contains($0.standardizedFileURL.path) }
+                duplicates += group.count - fresh.count
+                guard !fresh.isEmpty else { continue }
+
+                let files = await Self.collectFiles(from: fresh)
                 guard !files.isEmpty else { continue }
                 let scan = await Self.scan(files: files, config: config)
                 guard !scan.scanned.isEmpty else { continue }
-                let root = Self.computeRootURL(droppedURLs: group)
+                let root = Self.computeRootURL(droppedURLs: fresh)
                 self.inputUnits.append(InputUnit(
-                    id: UUID(), droppedURLs: group, rootURL: root, scan: scan))
+                    id: UUID(), droppedURLs: fresh, rootURL: root, scan: scan))
+                fresh.forEach { existing.insert($0.standardizedFileURL.path) }
                 added += 1
             }
             self.isScanning = false
             guard added > 0 else {
-                self.statusMessage = self.inputUnits.isEmpty
-                    ? String(localized: "振り分け対象のファイルがありません（対応拡張子: JPG / RAW / XMP）")
-                    : String(localized: "追加分に振り分け対象のファイルがありません（対応拡張子: JPG / RAW / XMP）")
+                if duplicates > 0 {
+                    self.statusMessage = String(localized: "既に追加済みの項目のためスキップしました")
+                } else {
+                    self.statusMessage = self.inputUnits.isEmpty
+                        ? String(localized: "振り分け対象のファイルがありません（対応拡張子: JPG / RAW / XMP）")
+                        : String(localized: "追加分に振り分け対象のファイルがありません（対応拡張子: JPG / RAW / XMP）")
+                }
                 return
+            }
+            if duplicates > 0 {
+                self.statusMessage = String(
+                    format: String(localized: "追加済みの %d 件をスキップしました"), duplicates)
             }
             self.rebuildPlan()
         }
