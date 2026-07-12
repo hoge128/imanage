@@ -48,6 +48,7 @@ struct DestinationMenu: View {
                             .foregroundStyle(.secondary)
                     }
                 }
+                .buttonStyle(.glass)
                 .controlSize(.small)
                 .popover(isPresented: $showMenu, arrowEdge: .bottom) {
                     menuContent

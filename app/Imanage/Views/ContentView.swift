@@ -11,7 +11,7 @@ struct ContentView: View {
 
         VStack(spacing: 0) {
             // 上部: 振り分け階層エディタ（適用 / 候補）。出力先の切替は移動先パネルへ集約。
-            HierarchyBarView(hierarchy: $settings.hierarchy)
+            HierarchyBarView(settings: settings)
             Divider()
 
             if let plan = store.plan {

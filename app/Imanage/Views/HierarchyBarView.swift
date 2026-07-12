@@ -9,18 +9,25 @@ import UniformTypeIdentifiers
 // ドラッグ中は DropDelegate で「入りそうな位置」をライブで空ける（make-way）アニメーション。
 
 struct HierarchyBarView: View {
-    @Binding var hierarchy: [String]
+    @Bindable var settings: SettingsStore
 
     /// ドラッグ中のフィールドキー（適用/候補どちらの由来でも入る）
     @State private var dragging: String?
     @State private var appliedTargeted = false
     @State private var poolTargeted = false
 
+    // プリセットメニューの状態
+    @State private var showPresetMenu = false
+    @State private var editingPresetID: UUID?
+    @State private var editingName = ""
+    @State private var isSaving = false
+    @State private var savingName = ""
+
     private var selectedFields: [HierarchyField] {
-        hierarchy.compactMap { HierarchyField.from(key: $0) }
+        settings.hierarchy.compactMap { HierarchyField.from(key: $0) }
     }
     private var availableFields: [HierarchyField] {
-        HierarchyField.allCases.filter { !hierarchy.contains($0.key) }
+        HierarchyField.allCases.filter { !settings.hierarchy.contains($0.key) }
     }
 
     var body: some View {
@@ -58,8 +65,12 @@ struct HierarchyBarView: View {
                 appendDragging()
             }
         } label: {
-            Label(String(localized: "適用する階層"), systemImage: "folder.badge.gearshape")
-                .font(.subheadline)
+            HStack(spacing: 8) {
+                Label(String(localized: "適用する階層"), systemImage: "folder.badge.gearshape")
+                    .font(.subheadline)
+                presetTrigger
+                Spacer()
+            }
         }
     }
 
@@ -89,7 +100,161 @@ struct HierarchyBarView: View {
             return NSItemProvider(object: field.key as NSString)
         }
         .onDrop(of: [.text], delegate: ChipReorderDelegate(
-            targetKey: field.key, hierarchy: $hierarchy, dragging: $dragging))
+            targetKey: field.key, hierarchy: $settings.hierarchy, dragging: $dragging))
+    }
+
+    // MARK: - プリセットメニュー
+
+    private var presetTrigger: some View {
+        Button {
+            showPresetMenu.toggle()
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "star")
+                Text("プリセット")
+                Image(systemName: "chevron.down").font(.caption2).foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.glass)
+        .controlSize(.small)
+        .popover(isPresented: $showPresetMenu, arrowEdge: .bottom) {
+            presetMenu
+        }
+    }
+
+    private var presetMenu: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            menuHeader(String(localized: "プリセットを適用"))
+
+            ForEach(settings.allPresets) { preset in
+                presetRow(preset)
+            }
+
+            Divider().padding(.vertical, 4)
+
+            if isSaving {
+                HStack(spacing: 6) {
+                    TextField("プリセット名", text: $savingName)
+                        .textFieldStyle(.roundedBorder)
+                        .onSubmit { commitSave() }
+                    Button(String(localized: "保存")) { commitSave() }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                    Button(String(localized: "取消")) { isSaving = false }
+                        .controlSize(.small)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+            } else {
+                Button {
+                    savingName = settings.suggestedPresetName()
+                    isSaving = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "square.and.arrow.down").frame(width: 16)
+                        Text("現在の並びをプリセットに保存…")
+                        Spacer()
+                    }
+                    .contentShape(Rectangle())
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.secondary)
+                .disabled(settings.hierarchy.isEmpty)
+            }
+        }
+        .padding(6)
+        .frame(width: 340)
+    }
+
+    private func presetRow(_ preset: HierarchyPreset) -> some View {
+        let isDef = settings.isDefaultPreset(preset.id)
+        let isBuiltin = settings.isBuiltinPreset(preset.id)
+        let seq = preset.fields
+            .compactMap { HierarchyField.from(key: $0)?.displayName }
+            .joined(separator: " › ")
+        return HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 2) {
+                if editingPresetID == preset.id {
+                    TextField("名前", text: $editingName)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(maxWidth: 180)
+                        .onSubmit {
+                            settings.renamePreset(preset.id, to: editingName)
+                            editingPresetID = nil
+                        }
+                } else {
+                    HStack(spacing: 6) {
+                        Text(preset.name).fontWeight(.medium)
+                        if isBuiltin {
+                            Image(systemName: "lock.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.tertiary)
+                        }
+                        if isDef {
+                            Text("既定").font(.caption2.bold()).foregroundStyle(Color.accentColor)
+                        }
+                    }
+                    // 組み込み「規定」は改名不可
+                    .onTapGesture(count: 2) {
+                        guard !isBuiltin else { return }
+                        editingName = preset.name
+                        editingPresetID = preset.id
+                    }
+                }
+                Text(seq.isEmpty ? String(localized: "（階層なし）") : seq)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+
+            Spacer(minLength: 4)
+
+            Button {
+                settings.toggleDefaultPreset(preset.id)
+            } label: {
+                Image(systemName: isDef ? "pin.fill" : "pin")
+                    .foregroundStyle(isDef ? Color.accentColor : Color.secondary)
+            }
+            .buttonStyle(.plain)
+            .help(isDef ? String(localized: "既定を解除") : String(localized: "既定のプリセットにする"))
+
+            // 組み込み「規定」は削除不可（ボタン自体を出さない）
+            if !isBuiltin {
+                Button {
+                    settings.removePreset(preset.id)
+                } label: {
+                    Image(systemName: "xmark").foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help(String(localized: "プリセットを削除"))
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard editingPresetID != preset.id else { return }
+            settings.applyPreset(preset)
+            showPresetMenu = false
+        }
+    }
+
+    private func menuHeader(_ text: String) -> some View {
+        Text(text)
+            .font(.caption2)
+            .foregroundStyle(.tertiary)
+            .textCase(.uppercase)
+            .padding(.horizontal, 8)
+            .padding(.top, 4)
+            .padding(.bottom, 2)
+    }
+
+    private func commitSave() {
+        settings.savePreset(name: savingName, fields: settings.hierarchy)
+        isSaving = false
     }
 
     // MARK: - 候補ボックス
@@ -155,20 +320,20 @@ struct HierarchyBarView: View {
     /// key を before の直前へ挿入。before が nil なら末尾。既存なら並べ替え。
     private func insert(_ key: String, before targetKey: String?) {
         guard HierarchyField.from(key: key) != nil else { return }
-        var arr = hierarchy
+        var arr = settings.hierarchy
         arr.removeAll { $0 == key }
         if let t = targetKey, let i = arr.firstIndex(of: t) {
             arr.insert(key, at: i)
         } else {
             arr.append(key)
         }
-        hierarchy = arr
+        settings.hierarchy = arr
     }
 
     private func remove(_ key: String) {
         // 空階層も許可する（出力先直下にそのまま振り分ける）
         withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
-            hierarchy = hierarchy.filter { $0 != key }
+            settings.hierarchy = settings.hierarchy.filter { $0 != key }
         }
     }
 
@@ -182,10 +347,10 @@ struct HierarchyBarView: View {
     }
 
     private func removeDragging() -> Bool {
-        guard let key = dragging, hierarchy.contains(key) else { dragging = nil; return false }
+        guard let key = dragging, settings.hierarchy.contains(key) else { dragging = nil; return false }
         dragging = nil
         withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
-            hierarchy.removeAll { $0 == key }
+            settings.hierarchy.removeAll { $0 == key }
         }
         return true
     }

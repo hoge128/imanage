@@ -4,6 +4,16 @@ import Observation
 // MARK: - SettingsStore
 // UserDefaults に永続化するアプリ設定。CLI の config.toml に相当する。
 
+// MARK: - HierarchyPreset
+// 「適用する階層」の並び順に名前を付けて保存するプリセット。
+
+struct HierarchyPreset: Codable, Identifiable, Equatable {
+    var id: UUID
+    var name: String
+    /// 階層キーの順序（HierarchyField.key の配列）
+    var fields: [String]
+}
+
 @MainActor
 @Observable
 final class SettingsStore {
@@ -34,6 +44,18 @@ final class SettingsStore {
     var hierarchy: [String] {
         didSet { defaults.set(hierarchy, forKey: Keys.hierarchy) }
     }
+    /// 「適用する階層」の並び順プリセット
+    var hierarchyPresets: [HierarchyPreset] {
+        didSet {
+            if let data = try? JSONEncoder().encode(hierarchyPresets) {
+                defaults.set(data, forKey: Keys.hierarchyPresets)
+            }
+        }
+    }
+    /// 既定プリセットの id.uuidString（空 = 既定なし。起動時に自動適用される）
+    var defaultPresetID: String {
+        didSet { defaults.set(defaultPresetID, forKey: Keys.defaultPresetID) }
+    }
     var xmpPairIsJpg: Bool {
         didSet { defaults.set(xmpPairIsJpg, forKey: Keys.xmpPairIsJpg) }
     }
@@ -57,6 +79,8 @@ final class SettingsStore {
         static let favoriteDestinations = "favoriteDestinations"
         static let defaultDestination = "defaultDestinationPath"
         static let hierarchy = "hierarchy"
+        static let hierarchyPresets = "hierarchyPresets"
+        static let defaultPresetID = "defaultPresetID"
         static let xmpPairIsJpg = "xmpPairIsJpg"
         static let watcherEnabled = "watcherEnabled"
         static let watcherSource = "watcherSourcePath"
@@ -84,10 +108,25 @@ final class SettingsStore {
         }
         self.hierarchy = savedHierarchy
 
+        // 階層プリセットの読込
+        if let data = defaults.data(forKey: Keys.hierarchyPresets),
+           let presets = try? JSONDecoder().decode([HierarchyPreset].self, from: data) {
+            self.hierarchyPresets = presets
+        } else {
+            self.hierarchyPresets = []
+        }
+        self.defaultPresetID = defaults.string(forKey: Keys.defaultPresetID) ?? ""
+
         self.xmpPairIsJpg = defaults.bool(forKey: Keys.xmpPairIsJpg)
         self.watcherEnabled = defaults.bool(forKey: Keys.watcherEnabled)
         self.watcherSourcePath = defaults.string(forKey: Keys.watcherSource) ?? ""
         self.watcherDestPath = defaults.string(forKey: Keys.watcherDest) ?? ""
+
+        // 既定プリセットがあれば起動時に階層へ自動適用する（組み込み「規定」も対象）
+        if !defaultPresetID.isEmpty,
+           let preset = allPresets.first(where: { $0.id.uuidString == defaultPresetID }) {
+            self.hierarchy = preset.fields
+        }
     }
 
     /// Core へ渡す不変スナップショット
@@ -152,6 +191,64 @@ final class SettingsStore {
         guard !defaultDestinationPath.isEmpty else { return }
         destinationMode = .fixed
         fixedDestinationPath = defaultDestinationPath
+    }
+
+    // MARK: - 階層プリセット
+
+    /// 組み込みの「規定」プリセット（削除・改名不可、常に一覧の先頭に表示）
+    static let builtinPresetID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+    static var builtinPreset: HierarchyPreset {
+        HierarchyPreset(
+            id: builtinPresetID,
+            name: String(localized: "規定"),
+            fields: [HierarchyField.maker.key, HierarchyField.model.key,
+                     HierarchyField.date.key, HierarchyField.pairing.key])
+    }
+    func isBuiltinPreset(_ id: UUID) -> Bool { id == Self.builtinPresetID }
+
+    /// 表示用: 組み込み「規定」＋ユーザープリセット
+    var allPresets: [HierarchyPreset] { [Self.builtinPreset] + hierarchyPresets }
+
+    /// 現在の階層から候補名を作る（先頭 3 フィールドの表示名を「›」連結）
+    func suggestedPresetName() -> String {
+        let names = hierarchy.prefix(3).compactMap { HierarchyField.from(key: $0)?.displayName }
+        return names.isEmpty ? String(localized: "新しいプリセット") : names.joined(separator: "›")
+    }
+
+    /// 現在の並びを名前を付けて保存する
+    func savePreset(name: String, fields: [String]) {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        let finalName = trimmed.isEmpty ? suggestedPresetName() : trimmed
+        hierarchyPresets.append(HierarchyPreset(id: UUID(), name: finalName, fields: fields))
+    }
+
+    func renamePreset(_ id: UUID, to name: String) {
+        guard !isBuiltinPreset(id) else { return }
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty, let i = hierarchyPresets.firstIndex(where: { $0.id == id }) else { return }
+        hierarchyPresets[i].name = trimmed
+    }
+
+    func removePreset(_ id: UUID) {
+        guard !isBuiltinPreset(id) else { return }  // 「規定」は削除不可
+        hierarchyPresets.removeAll { $0.id == id }
+        if defaultPresetID == id.uuidString { defaultPresetID = "" }
+    }
+
+    /// プリセットを階層に適用する
+    func applyPreset(_ preset: HierarchyPreset) {
+        hierarchy = preset.fields
+    }
+
+    func isDefaultPreset(_ id: UUID) -> Bool {
+        !defaultPresetID.isEmpty && defaultPresetID == id.uuidString
+    }
+
+    func setDefaultPreset(_ id: UUID) { defaultPresetID = id.uuidString }
+    func clearDefaultPreset() { defaultPresetID = "" }
+
+    func toggleDefaultPreset(_ id: UUID) {
+        if isDefaultPreset(id) { clearDefaultPreset() } else { setDefaultPreset(id) }
     }
 
     /// ドロップされた項目（ファイル/フォルダ）に対する振り分け先ルートを解決する
