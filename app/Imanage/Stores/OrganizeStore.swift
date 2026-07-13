@@ -13,7 +13,10 @@ struct InputUnit: Identifiable, Sendable {
     /// EXIF スキャン済みファイル
     let scan: ScanResult
 
-    var fileCount: Int { scan.scanned.count + scan.skipped.count }
+    /// 振り分け対象の件数（scanned のみ。対象外は含まない）
+    var targetCount: Int { scan.scanned.count }
+    /// 対象外（その場に残る）の件数
+    var skippedCount: Int { scan.skipped.count }
 
     /// フォルダをドラッグした入力か（単一フォルダ → rootURL がそのフォルダ自身になる）。
     /// 空フォルダ掃除はこの場合のみ対象（ファイル直接ドロップ時に親フォルダを消さないため）。
@@ -98,8 +101,8 @@ final class OrganizeStore {
                     self.statusMessage = String(localized: "既に追加済みの項目のためスキップしました")
                 } else {
                     self.statusMessage = self.inputUnits.isEmpty
-                        ? String(localized: "振り分け対象のファイルがありません（対応拡張子: JPG / RAW / XMP）")
-                        : String(localized: "追加分に振り分け対象のファイルがありません（対応拡張子: JPG / RAW / XMP）")
+                        ? String(localized: "振り分け対象のファイルがありません（対象: カメラ EXIF のある JPG / HEIC / RAW / XMP）")
+                        : String(localized: "追加分に振り分け対象のファイルがありません（対象: カメラ EXIF のある JPG / HEIC / RAW / XMP）")
                 }
                 return
             }
@@ -241,7 +244,8 @@ final class OrganizeStore {
             // plan は残したまま完了状態にし、Before/After と undo を表示し続ける
             self.didExecute = true
             self.lastResult = result
-            self.statusMessage = Self.summaryMessage(result, removedDirs: removedDirs)
+            self.statusMessage = Self.summaryMessage(
+                result, removedDirs: removedDirs, leftBehind: plan.skipped.count)
         }
     }
 
@@ -286,13 +290,17 @@ final class OrganizeStore {
         return organizer.execute(plan: plan, progress: progress)
     }
 
-    private static func summaryMessage(_ result: OrganizeResult, removedDirs: Int = 0) -> String {
+    private static func summaryMessage(_ result: OrganizeResult, removedDirs: Int = 0,
+                                       leftBehind: Int = 0) -> String {
         var parts = [String(format: String(localized: "%d 件を振り分けました"), result.movedCount)]
         if !result.skippedExisting.isEmpty {
             parts.append(String(format: String(localized: "%d 件スキップ（移動先に同名ファイル）"), result.skippedExisting.count))
         }
         if removedDirs > 0 {
             parts.append(String(format: String(localized: "空フォルダ %d 件をゴミ箱へ"), removedDirs))
+        }
+        if leftBehind > 0 {
+            parts.append(String(format: String(localized: "対象外 %d 件は移動せずそのまま残しました"), leftBehind))
         }
         if !result.errors.isEmpty {
             parts.append(String(format: String(localized: "%d 件エラー"), result.errors.count))

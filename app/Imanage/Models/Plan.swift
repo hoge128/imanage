@@ -9,6 +9,9 @@ import Foundation
 /// - shutter_speed: 1秒以上 "{n}s" / 未満 "1/{n}s"
 /// - date: DateTimeOriginal → DateTimeDigitized → btime, "yyyyMMdd"
 struct ExifFields: Sendable, Equatable {
+    /// カメラ EXIF（DateTimeOriginal/Digitized または Make/Model）を持つか。
+    /// false = スクリーンショットや Web 画像など「カメラで撮影された静止画」でない可能性が高い。
+    var hasCameraExif: Bool = false
     var maker: String = "Unknown"
     var model: String = "Unknown"
     var creator: String = "Unknown"

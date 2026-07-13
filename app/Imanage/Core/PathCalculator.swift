@@ -18,9 +18,23 @@ struct ScannedFile: Sendable {
     let dirName: String
 }
 
+/// 振り分け対象外の理由
+enum SkipReason: Sendable {
+    /// 対応していない種類（動画・PNG・書類など）
+    case unsupportedType
+    /// カメラ EXIF（撮影日時・Make/Model）を持たない（スクリーンショット・Web 画像など）
+    case noExif
+}
+
+/// 振り分け対象外のファイル（その場に残す）
+struct SkippedFile: Sendable {
+    let url: URL
+    let reason: SkipReason
+}
+
 struct ScanResult: Sendable {
     let scanned: [ScannedFile]
-    let skipped: [URL]
+    let skipped: [SkippedFile]
 }
 
 struct PathCalculator: Sendable {
@@ -29,7 +43,7 @@ struct PathCalculator: Sendable {
     // MARK: - 1. スキャン（EXIF 読み取り）
 
     func scanFiles(_ droppedFiles: [URL]) -> ScanResult {
-        var skipped: [URL] = []
+        var skipped: [SkippedFile] = []
         var jpgFiles: [URL] = []
         var rawFiles: [URL] = []
         var xmpFiles: [URL] = []
@@ -46,12 +60,12 @@ struct PathCalculator: Sendable {
             } else if ext == ImanageExtensions.xmp {
                 xmpFiles.append(url)
             } else {
-                skipped.append(url)
+                skipped.append(SkippedFile(url: url, reason: .unsupportedType))
             }
         }
 
         // 処理順ソート: JPG(0) → RAW(1) → XMP(2)、同順位はファイル名昇順
-        // XMP が同名 JPG の EXIF を参照できるようにするため
+        // XMP/RAW が同名 JPG の EXIF を参照できるようにするため
         let tagged: [(URL, Int)] =
             jpgFiles.map { ($0, 0) } +
             rawFiles.map { ($0, 1) } +
@@ -61,7 +75,7 @@ struct PathCalculator: Sendable {
             return $0.0.lastPathComponent < $1.0.lastPathComponent
         }.map { $0.0 }
 
-        // JPG の stem → ExifFields キャッシュ（XMP/RAW が同名 JPG の EXIF を参照する）
+        // stem → ExifFields キャッシュ（XMP/RAW が同名 JPG、XMP が同名 RAW の EXIF を参照する）
         var exifCache: [String: ExifFields] = [:]
         var scanned: [ScannedFile] = []
 
@@ -75,6 +89,14 @@ struct PathCalculator: Sendable {
 
             if ImanageExtensions.jpg.contains(ext) {
                 let f = ExifReader.read(from: url, config: config)
+                // コンセプト = カメラで撮影された静止画のみ。
+                // カメラ EXIF を持たない JPG/HEIC（スクリーンショット・Web 画像等）は
+                // 対象外にしてその場に残す。キャッシュにも入れない（Unknown 値を
+                // 同名 RAW/XMP に波及させないため）。
+                guard f.hasCameraExif else {
+                    skipped.append(SkippedFile(url: url, reason: .noExif))
+                    continue
+                }
                 exifCache[stem] = f
                 fields = f
                 if ExifReader.isRetouched(url) {
@@ -85,13 +107,24 @@ struct PathCalculator: Sendable {
                     category = .jpg
                 }
             } else if ImanageExtensions.raw.contains(ext) {
+                // RAW はカメラ生成物なので常に対象
                 dirName  = config.rawDirName
                 category = .raw
-                fields = resolveFields(url: url, stem: stem, cache: exifCache)
+                let f = resolveFields(url: url, stem: stem, cache: exifCache)
+                // RAW の EXIF もキャッシュし、同名 XMP（JPG 不在ペア）が参照できるようにする
+                if exifCache[stem] == nil { exifCache[stem] = f }
+                fields = f
             } else {
+                let f = resolveFields(url: url, stem: stem, cache: exifCache)
+                // ペア（同名 JPG/RAW）の EXIF を引けない XMP は、ペアと分離して
+                // Unknown フォルダへ行くのを防ぐため対象外にする。
+                guard f.hasCameraExif else {
+                    skipped.append(SkippedFile(url: url, reason: .noExif))
+                    continue
+                }
                 dirName  = config.xmpPairIsJpg ? config.jpgDirName : config.rawDirName
                 category = .xmp
-                fields   = resolveFields(url: url, stem: stem, cache: exifCache)
+                fields   = f
             }
 
             scanned.append(ScannedFile(
@@ -120,7 +153,8 @@ struct PathCalculator: Sendable {
                 category: sf.category,
                 relativeDir: relativeDir))
         }
-        return OrganizePlan(destRoot: destRoot, moves: moves, skipped: scan.skipped)
+        return OrganizePlan(destRoot: destRoot, moves: moves,
+                            skipped: scan.skipped.map(\.url))
     }
 
     // MARK: - 便宜メソッド（スキャン + プランをまとめて実行）

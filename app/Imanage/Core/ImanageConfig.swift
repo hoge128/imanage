@@ -26,7 +26,8 @@ struct ImanageConfig: Sendable, Equatable {
 // MARK: - 対象拡張子（config.toml と同一、小文字で保持し比較は lowercased）
 
 enum ImanageExtensions {
-    static let jpg: Set<String> = ["jpg", "jpeg", "jpe", "jfif"]
+    /// heic/heif は iPhone カメラの標準形式のため jpg グループとして扱う（GUI のみの拡張）
+    static let jpg: Set<String> = ["jpg", "jpeg", "jpe", "jfif", "heic", "heif"]
 
     static let raw: Set<String> = [
         "arw", "srf", "sr2",        // Sony

@@ -21,6 +21,8 @@ struct FileLeaf: Identifiable {
     let id: String
     let name: String
     let category: FileCategory?
+    /// 振り分け対象外の理由（nil = 対象）
+    var skipReason: SkipReason? = nil
 }
 
 // MARK: - ツリー構築
@@ -56,9 +58,9 @@ enum FolderTreeBuilder {
     /// 入力ユニットの「現在」ツリー。rootURL（ドラッグしたフォルダ／ファイルの親）を
     /// ルートとし、その配下の実ディスク構造をそのまま表示する。
     static func buildSourceTree(scan: ScanResult, rootURL: URL) -> FolderNode {
-        var entries: [(url: URL, category: FileCategory?)] =
-            scan.scanned.map { ($0.source.standardizedFileURL, $0.category) }
-        entries += scan.skipped.map { ($0.standardizedFileURL, nil) }
+        var entries: [(url: URL, category: FileCategory?, skipReason: SkipReason?)] =
+            scan.scanned.map { ($0.source.standardizedFileURL, $0.category, nil) }
+        entries += scan.skipped.map { ($0.url.standardizedFileURL, nil, $0.reason) }
 
         let rootComps = Array(rootURL.standardizedFileURL.pathComponents)
         let rootName = rootURL.lastPathComponent.isEmpty ? "/" : rootURL.lastPathComponent
@@ -70,7 +72,8 @@ enum FolderTreeBuilder {
             var node = root
             for c in rel { node = node.child(c) }
             node.files.append(FileLeaf(
-                id: entry.url.path, name: entry.url.lastPathComponent, category: entry.category))
+                id: entry.url.path, name: entry.url.lastPathComponent,
+                category: entry.category, skipReason: entry.skipReason))
         }
         return root.toNode(path: rootURL.path)
     }
@@ -224,14 +227,31 @@ struct FolderNodeView: View {
             rails(depth + 1)
             HStack(spacing: 4) {
                 Image(systemName: icon(for: leaf.category))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(leaf.skipReason != nil
+                                     ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.secondary))
                 Text(leaf.name)
                     .font(.callout.monospaced())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(leaf.skipReason != nil
+                                     ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.secondary))
+                if let reason = leaf.skipReason {
+                    skipBadge(reason)
+                }
                 Spacer()
             }
             .padding(.vertical, 3)
         }
+    }
+
+    /// 対象外バッジ。移動されずその場に残ることを明示する。
+    private func skipBadge(_ reason: SkipReason) -> some View {
+        Text(reason == .noExif
+             ? String(localized: "対象外 (EXIFなし)") : String(localized: "対象外"))
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 1)
+            .overlay(Capsule().strokeBorder(Color.secondary.opacity(0.4)))
+            .help(String(localized: "振り分け対象外のため移動されません（その場に残ります）"))
     }
 
     private func icon(for category: FileCategory?) -> String {

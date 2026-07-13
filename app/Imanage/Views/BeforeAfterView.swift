@@ -54,7 +54,14 @@ struct BeforeAfterView: View {
     private var destPanelFill: Color   { didExecute ? panelActive   : panelPreview }
 
     private var destForest: [FolderNode] { FolderTreeBuilder.buildDestination(plan) }
-    private var sourceTotal: Int { store.inputUnits.reduce(0) { $0 + $1.fileCount } }
+    private var sourceTotal: Int { store.inputUnits.reduce(0) { $0 + $1.targetCount } }
+    /// 対象外（移動されない）の合計件数
+    private var sourceSkipped: Int { store.inputUnits.reduce(0) { $0 + $1.skippedCount } }
+    /// 全入力ユニットの対象外ファイル一覧
+    private var allSkipped: [SkippedFile] { store.inputUnits.flatMap { $0.scan.skipped } }
+
+    /// 対象外一覧ポップオーバーの表示状態
+    @State private var showSkippedList = false
     private var destTotal: Int { plan.moves.count }
 
     var body: some View {
@@ -76,7 +83,8 @@ struct BeforeAfterView: View {
 
     private var sourcePanel: some View {
         VStack(alignment: .leading, spacing: 6) {
-            panelHeader(String(localized: "移動元"), systemImage: "tray.full", count: sourceTotal)
+            panelHeader(String(localized: "移動元"), systemImage: "tray.full",
+                        count: sourceTotal, skipped: sourceSkipped)
             expandButtons(sourceExpansion)
 
             // 複数入力はルートディレクトリ名のタブで一覧・削除・ジャンプ。
@@ -297,15 +305,96 @@ struct BeforeAfterView: View {
 
     // MARK: - 共通パーツ
 
-    private func panelHeader(_ title: String, systemImage: String, count: Int) -> some View {
+    private func panelHeader(_ title: String, systemImage: String,
+                             count: Int, skipped: Int = 0) -> some View {
         HStack(spacing: 8) {
             Label(title, systemImage: systemImage)
                 .font(.headline)
             Text(String(format: String(localized: "合計 %d 件"), count))
                 .font(.caption.monospacedDigit())
                 .foregroundStyle(.secondary)
+            if skipped > 0 {
+                // クリックで対象外ファイルの一覧を表示
+                Button {
+                    showSkippedList = true
+                } label: {
+                    HStack(spacing: 3) {
+                        Text(String(format: String(localized: "対象外 %d 件"), skipped))
+                            .font(.caption.monospacedDigit())
+                        Image(systemName: "chevron.down")
+                            .font(.caption2)
+                    }
+                    .foregroundStyle(.orange)
+                }
+                .buttonStyle(.plain)
+                .help(String(localized: "振り分け対象外のファイル一覧を表示（移動されず、その場に残ります）"))
+                .popover(isPresented: $showSkippedList, arrowEdge: .bottom) {
+                    skippedListView
+                }
+            }
             Spacer()
         }
+    }
+
+    // MARK: - 対象外ファイル一覧
+
+    private var skippedListView: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Label(String(localized: "対象外のファイル"), systemImage: "nosign")
+                    .font(.headline)
+                Text(String(format: String(localized: "%d 件"), allSkipped.count))
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            Text("これらは振り分け対象外のため移動されず、元の場所に残ります。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(allSkipped, id: \.url) { item in
+                        skippedRow(item)
+                    }
+                }
+            }
+            .frame(maxHeight: 300)
+        }
+        .padding(12)
+        .frame(width: 460)
+    }
+
+    private func skippedRow(_ item: SkippedFile) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "doc")
+                .foregroundStyle(.tertiary)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(item.url.lastPathComponent)
+                    .font(.callout.monospaced())
+                Text(item.url.deletingLastPathComponent().path)
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                    .truncationMode(.head)
+            }
+
+            Spacer(minLength: 8)
+
+            Text(item.reason == .noExif
+                 ? String(localized: "EXIF なし") : String(localized: "非対応の種類"))
+                .font(.caption2)
+                .foregroundStyle(.orange)
+
+            Button {
+                NSWorkspace.shared.activateFileViewerSelecting([item.url])
+            } label: {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .help(String(localized: "Finder で表示"))
+        }
+        .padding(.vertical, 3)
     }
 
     private func expandButtons(_ model: TreeExpansionModel) -> some View {

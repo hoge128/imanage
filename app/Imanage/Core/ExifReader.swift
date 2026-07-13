@@ -71,6 +71,15 @@ enum ExifReader {
         // rating: XMP サイドカー（または .xmp 自身）→ 埋め込み（IPTC StarRating）
         fields.rating = readRating(url: url, props: props)
 
+        // カメラ EXIF の有無: 撮影日時（DateTimeOriginal/Digitized）または Make/Model が
+        // あればカメラ由来と判定する。スクリーンショット・Web 画像はいずれも持たない。
+        let hasExifDate =
+            parseExifDate(exif[kCGImagePropertyExifDateTimeOriginal as String] as? String) != nil
+            || parseExifDate(exif[kCGImagePropertyExifDateTimeDigitized as String] as? String) != nil
+        fields.hasCameraExif = hasExifDate
+            || fields.maker != "Unknown"
+            || fields.model != "Unknown"
+
         // date: DateTimeOriginal → DateTimeDigitized → birthtime → modificationDate
         // 表記違い（date_a / date_b）も同じ生日時から整形する
         if let raw = resolveRawDate(exif: exif, url: url) {
