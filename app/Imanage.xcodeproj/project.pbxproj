@@ -13,6 +13,7 @@
 		2F20899FF81E972886F5FB32 /* ImanageApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A23D1EB74EEEF85B80A3D0C /* ImanageApp.swift */; };
 		31C9068E0B56B6FCFA914481 /* OrganizeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0F0589EB35BF4C116D0853E /* OrganizeStore.swift */; };
 		32D31172BFF07A78CFF008BE /* FolderTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71159403D066433A24476F43 /* FolderTree.swift */; };
+		338CB6DBFD4CE3C49626796D /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 8CC5911B62578908A16BAB41 /* AppIcon.icon */; };
 		37FC9132CEF5967D997DD079 /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B310E39BAD38C1D0E997771 /* MenuBarController.swift */; };
 		3B403C355CBDC0F051E35906 /* HierarchyBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E989A990B9E0B2C25161A414 /* HierarchyBarView.swift */; };
 		4C45F44690CBF22A06ED409C /* DestinationBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DF45844250759827B06DD04 /* DestinationBarView.swift */; };
@@ -49,6 +50,7 @@
 		71159403D066433A24476F43 /* FolderTree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderTree.swift; sourceTree = "<group>"; };
 		7278CF8CD7A4EEC7220122B6 /* WatcherStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatcherStore.swift; sourceTree = "<group>"; };
 		8B310E39BAD38C1D0E997771 /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
+		8CC5911B62578908A16BAB41 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
 		952F9EFAF204B8C72D65B4E3 /* Imanage.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Imanage.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		97DB87E01CB4535DA05C13FF /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
 		9DF45844250759827B06DD04 /* DestinationBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationBarView.swift; sourceTree = "<group>"; };
@@ -72,6 +74,7 @@
 		3CF8484987C4043286055230 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				8CC5911B62578908A16BAB41 /* AppIcon.icon */,
 				F27D438EC9467656546E8AA5 /* Info.plist */,
 				14FFA75B9B30992C3A260204 /* Localizable.xcstrings */,
 			);
@@ -213,6 +216,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				338CB6DBFD4CE3C49626796D /* AppIcon.icon in Resources */,
 				7B1888339B7E59EE67821568 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
