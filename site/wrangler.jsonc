@@ -5,6 +5,10 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "imanage",
   "compatibility_date": "2026-07-20",
+  // 公開先は imanage.itotsum.com のみ。
+  // *.workers.dev とプレビュー URL は同じ内容を別 URL で配信してしまうため無効化する。
+  "workers_dev": false,
+  "preview_urls": false,
   "assets": {
     "directory": "./.vitepress/dist",
     // 存在しないパスは VitePress が生成する 404.html を返す
