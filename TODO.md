@@ -83,23 +83,24 @@ Apple が "required reason API" に指定しているファイルタイムスタ
 
 ## 🟡 公開まわり
 
-### 4. Google Search Console への登録と sitemap 送信
+### 4. Google Search Console（登録・sitemap 送信は完了 / 2026-07-20）
 
-サイト側は準備完了（sitemap に 4 URL、全ページ noindex 解除済み、
-`robots.txt` に `Sitemap:` 行あり）。残るはコンソール操作のみ。
+`itotsum.com` をドメインプロパティとして登録し、DNS の TXT レコードで所有権を確認済み。
+`https://imanage.itotsum.com/sitemap.xml` を送信し、**検出ページ数 4** を確認した。
 
-**推奨: ドメインプロパティ**（`itotsum.com` 配下すべてをカバーする。
-今後サブドメインでサイトを増やしても 1 つで済む）
+> ⚠️ 確認用の TXT レコード（`google-site-verification=...`、`itotsum.com` の `@`）は
+> 削除しないこと。Google が定期的に再確認し、消えているとプロパティが失効する。
+> 値を忘れても `dig +short TXT itotsum.com` でいつでも読み出せる。
 
-1. Search Console → プロパティを追加 → **ドメイン** → `itotsum.com`
-2. 表示された `google-site-verification=...` を Cloudflare の DNS に TXT で追加
-   （Type: TXT / Name: `@` / Content: その値）
-3. 確認を押す。**確認後も TXT レコードは消さないこと**（再確認で失効する）
-4. サイトマップ → `https://imanage.itotsum.com/sitemap.xml` を送信
-5. 任意: URL 検査から日本語トップと `/en/` のインデックス登録をリクエスト
+残りは経過観察:
 
-URL プレフィックスプロパティを選ぶ場合は、HTML タグの content 値を
-`site/.vitepress/config.mts` の `head` に追加すれば確認できる。
+- 数日〜2 週間後、**インデックス作成 → ページ** で 4 ページが「登録済み」になっているか
+  （検出 ≠ インデックス。反映には時間がかかる）
+- 任意: URL 検査から `https://imanage.itotsum.com/` と `/en/` の
+  インデックス登録をリクエストすると早まる
+- hreflang のエラーが出ていないか（日英の相互参照は実装済みなので通常は出ない）
+
+今後 `itotsum.com` 配下にサイトを増やしても、このドメインプロパティがカバーする。
 
 ---
 
