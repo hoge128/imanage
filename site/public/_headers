@@ -1,0 +1,12 @@
+# Cloudflare Pages のヘッダー設定
+#
+# canonical は imanage.itotsum.com を指しているが、そのドメインはまだ未設定。
+# この状態で *.pages.dev がクロールされると、実在しない URL を正規版として
+# 申告することになるため、インデックスを拒否しておく。
+#
+# ※ robots.txt では止めないこと。クロール自体を禁止すると、
+#   クローラーがこのヘッダーを読めず noindex が伝わらない。
+#
+# カスタムドメインを割り当てたら、このファイルごと削除する。
+/*
+  X-Robots-Tag: noindex, nofollow

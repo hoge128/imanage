@@ -1,0 +1,13 @@
+{
+  // Cloudflare Workers (静的アセットのみ) の設定。
+  // Worker スクリプトは持たず、VitePress のビルド成果物をそのまま配信する。
+  // Workers Builds が `npx wrangler deploy` を site/ で実行する前提。
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "imanage",
+  "compatibility_date": "2026-07-20",
+  "assets": {
+    "directory": "./.vitepress/dist",
+    // 存在しないパスは VitePress が生成する 404.html を返す
+    "not_found_handling": "404-page"
+  }
+}
