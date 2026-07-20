@@ -10,10 +10,12 @@
 		08F525634D1F3EAB72813C5E /* Journal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DB70C8D0B52411D400E426A /* Journal.swift */; };
 		17C36D2BC2397F2EAEBD3403 /* WatcherStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7278CF8CD7A4EEC7220122B6 /* WatcherStore.swift */; };
 		2A53BDBE15E247E9F6809A11 /* ActionBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B15EC22DCD8C8C21D66BBDF /* ActionBarView.swift */; };
+		2EBFFA17A042261D7EA26916 /* AboutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 079F56C39230AD0D945836A2 /* AboutView.swift */; };
 		2F20899FF81E972886F5FB32 /* ImanageApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A23D1EB74EEEF85B80A3D0C /* ImanageApp.swift */; };
 		31C9068E0B56B6FCFA914481 /* OrganizeStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0F0589EB35BF4C116D0853E /* OrganizeStore.swift */; };
 		32D31172BFF07A78CFF008BE /* FolderTree.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71159403D066433A24476F43 /* FolderTree.swift */; };
 		338CB6DBFD4CE3C49626796D /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = 8CC5911B62578908A16BAB41 /* AppIcon.icon */; };
+		3390A7491DB6E500F46A68EF /* SecurityScope.swift in Sources */ = {isa = PBXBuildFile; fileRef = 291B391B7750A233C93FA6D4 /* SecurityScope.swift */; };
 		37FC9132CEF5967D997DD079 /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B310E39BAD38C1D0E997771 /* MenuBarController.swift */; };
 		3B403C355CBDC0F051E35906 /* HierarchyBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E989A990B9E0B2C25161A414 /* HierarchyBarView.swift */; };
 		4C45F44690CBF22A06ED409C /* DestinationBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DF45844250759827B06DD04 /* DestinationBarView.swift */; };
@@ -23,6 +25,7 @@
 		7A3DAE4DB98CDD1CC4D92037 /* Plan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A950E190D3539B08F4035E /* Plan.swift */; };
 		7B1888339B7E59EE67821568 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 14FFA75B9B30992C3A260204 /* Localizable.xcstrings */; };
 		8224C5680CAECCA61382955C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6CF70632FC2C89D3FE4A347 /* SettingsView.swift */; };
+		8AFE5DA5D76D555A5CE9A048 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6C1514982B52FDB6BD19DE60 /* PrivacyInfo.xcprivacy */; };
 		92A40A0EF7281C2B394A5409 /* FileOrganizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20257A390E6E4A87DE7BE7D4 /* FileOrganizer.swift */; };
 		96617FCFC2754196E11BFFA7 /* ImanageConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3080BB6CA80881B03B373D5C /* ImanageConfig.swift */; };
 		9CB5E46CDD728986A40B4F60 /* FolderWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 204DA9CEA9D6F6310B49970B /* FolderWatcher.swift */; };
@@ -36,18 +39,21 @@
 
 /* Begin PBXFileReference section */
 		03312544082811A6A779A30F /* PathCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathCalculator.swift; sourceTree = "<group>"; };
+		079F56C39230AD0D945836A2 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
 		08A950E190D3539B08F4035E /* Plan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Plan.swift; sourceTree = "<group>"; };
 		14FFA75B9B30992C3A260204 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		20257A390E6E4A87DE7BE7D4 /* FileOrganizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileOrganizer.swift; sourceTree = "<group>"; };
 		204DA9CEA9D6F6310B49970B /* FolderWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderWatcher.swift; sourceTree = "<group>"; };
 		217814E80ADD844956B66FA6 /* BeforeAfterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BeforeAfterView.swift; sourceTree = "<group>"; };
 		21792FC95E327817DD750183 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		291B391B7750A233C93FA6D4 /* SecurityScope.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityScope.swift; sourceTree = "<group>"; };
 		3080BB6CA80881B03B373D5C /* ImanageConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImanageConfig.swift; sourceTree = "<group>"; };
 		3A23D1EB74EEEF85B80A3D0C /* ImanageApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImanageApp.swift; sourceTree = "<group>"; };
 		413CD305F371D4623BD404FD /* BTimeUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BTimeUtils.swift; sourceTree = "<group>"; };
 		5239C1593462D7A536D61F17 /* HierarchyField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HierarchyField.swift; sourceTree = "<group>"; };
 		5B15EC22DCD8C8C21D66BBDF /* ActionBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionBarView.swift; sourceTree = "<group>"; };
 		5DB70C8D0B52411D400E426A /* Journal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Journal.swift; sourceTree = "<group>"; };
+		6C1514982B52FDB6BD19DE60 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		71159403D066433A24476F43 /* FolderTree.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FolderTree.swift; sourceTree = "<group>"; };
 		7278CF8CD7A4EEC7220122B6 /* WatcherStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatcherStore.swift; sourceTree = "<group>"; };
 		8B310E39BAD38C1D0E997771 /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
@@ -61,6 +67,7 @@
 		B6CF70632FC2C89D3FE4A347 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		E0F0589EB35BF4C116D0853E /* OrganizeStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrganizeStore.swift; sourceTree = "<group>"; };
 		E989A990B9E0B2C25161A414 /* HierarchyBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HierarchyBarView.swift; sourceTree = "<group>"; };
+		ECFFEAF725165EBE03F678D0 /* Imanage.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Imanage.entitlements; sourceTree = "<group>"; };
 		F27D438EC9467656546E8AA5 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -79,6 +86,7 @@
 				8CC5911B62578908A16BAB41 /* AppIcon.icon */,
 				F27D438EC9467656546E8AA5 /* Info.plist */,
 				14FFA75B9B30992C3A260204 /* Localizable.xcstrings */,
+				6C1514982B52FDB6BD19DE60 /* PrivacyInfo.xcprivacy */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -94,6 +102,7 @@
 				3080BB6CA80881B03B373D5C /* ImanageConfig.swift */,
 				5DB70C8D0B52411D400E426A /* Journal.swift */,
 				03312544082811A6A779A30F /* PathCalculator.swift */,
+				291B391B7750A233C93FA6D4 /* SecurityScope.swift */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -120,6 +129,7 @@
 		7ED748558B3657BC058F4F58 /* Imanage */ = {
 			isa = PBXGroup;
 			children = (
+				ECFFEAF725165EBE03F678D0 /* Imanage.entitlements */,
 				3A23D1EB74EEEF85B80A3D0C /* ImanageApp.swift */,
 				41ACEA09D19298E1775CC274 /* Core */,
 				2E6F62D5295991D535399F0D /* MenuBar */,
@@ -142,6 +152,7 @@
 		BBD394A67B32E37D1407469D /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				079F56C39230AD0D945836A2 /* AboutView.swift */,
 				5B15EC22DCD8C8C21D66BBDF /* ActionBarView.swift */,
 				217814E80ADD844956B66FA6 /* BeforeAfterView.swift */,
 				21792FC95E327817DD750183 /* ContentView.swift */,
@@ -192,6 +203,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					5B6EFDE672DBA608DD3E6BE9 = {
+						DevelopmentTeam = KTQ8JQW28L;
+						ProvisioningStyle = Automatic;
+					};
 				};
 			};
 			buildConfigurationList = 929259CC33617DFAA96647B3 /* Build configuration list for PBXProject "Imanage" */;
@@ -221,6 +236,7 @@
 			files = (
 				338CB6DBFD4CE3C49626796D /* AppIcon.icon in Resources */,
 				7B1888339B7E59EE67821568 /* Localizable.xcstrings in Resources */,
+				8AFE5DA5D76D555A5CE9A048 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -231,6 +247,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2EBFFA17A042261D7EA26916 /* AboutView.swift in Sources */,
 				2A53BDBE15E247E9F6809A11 /* ActionBarView.swift in Sources */,
 				778143B03D97BCA60B557A9B /* BTimeUtils.swift in Sources */,
 				4C860F1DB0C4DB46761EB927 /* BeforeAfterView.swift in Sources */,
@@ -251,6 +268,7 @@
 				31C9068E0B56B6FCFA914481 /* OrganizeStore.swift in Sources */,
 				E4F2D58CAFF3ABCB8FE87722 /* PathCalculator.swift in Sources */,
 				7A3DAE4DB98CDD1CC4D92037 /* Plan.swift in Sources */,
+				3390A7491DB6E500F46A68EF /* SecurityScope.swift in Sources */,
 				69A7881B5955C6C4C2C21EBB /* SettingsStore.swift in Sources */,
 				8224C5680CAECCA61382955C /* SettingsView.swift in Sources */,
 				17C36D2BC2397F2EAEBD3403 /* WatcherStore.swift in Sources */,
@@ -383,7 +401,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Imanage/Imanage.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = KTQ8JQW28L;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = Imanage/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -392,7 +413,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.itotsum.imanage;
-				PRODUCT_NAME = Imanage;
+				PRODUCT_NAME = imanage;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;
@@ -403,7 +424,10 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Imanage/Imanage.entitlements;
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = KTQ8JQW28L;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = Imanage/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -412,7 +436,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.itotsum.imanage;
-				PRODUCT_NAME = Imanage;
+				PRODUCT_NAME = imanage;
 				SDKROOT = macosx;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 6.0;

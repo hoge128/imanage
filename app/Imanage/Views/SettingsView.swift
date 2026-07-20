@@ -81,22 +81,23 @@ struct SettingsView: View {
             Button(String(localized: "今すぐ再起動")) { Self.relaunchApp() }
             Button(String(localized: "あとで"), role: .cancel) {}
         } message: {
-            Text("言語の変更を適用するには Imanage を再起動する必要があります。自動で再起動しない場合は、手動で終了して開き直してください。")
+            Text("言語の変更を適用するには imanage を再起動する必要があります。自動で再起動しない場合は、手動で終了して開き直してください。")
         }
     }
 
     /// 自身を新しいプロセスとして開き直してから終了する。
     /// AppleLanguages の上書きは起動時にしか効かないため、言語変更には再起動が要る。
+    ///
+    /// App Sandbox は posix_spawn/fork を禁止しているため Process は使えない。
+    /// LaunchServices 経由（NSWorkspace）ならサンドボックス下でも起動できる。
     private static func relaunchApp() {
-        guard let bundleID = Bundle.main.bundleIdentifier else {
-            NSApp.terminate(nil)
-            return
+        let config = NSWorkspace.OpenConfiguration()
+        config.createsNewApplicationInstance = true
+        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: config) { _, _ in
+            // 新インスタンスの起動可否によらず終了する。起動できなかった場合は
+            // アラート本文の案内どおり手動で開き直してもらう。
+            Task { @MainActor in NSApp.terminate(nil) }
         }
-        let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        task.arguments = ["-n", "-b", bundleID]
-        try? task.run()
-        NSApp.terminate(nil)
     }
 
     private static func pickFolder() -> URL? {
@@ -104,6 +105,10 @@ struct SettingsView: View {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        return panel.runModal() == .OK ? panel.url : nil
+        guard panel.runModal() == .OK, let url = panel.url else { return nil }
+        // 監視元/監視先はアプリ再起動をまたいで常駐処理から使うため、
+        // パス文字列とは別にブックマークを保持する。
+        SecurityScope.shared.remember(url)
+        return url
     }
 }

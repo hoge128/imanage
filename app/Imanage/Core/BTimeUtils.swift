@@ -1,5 +1,6 @@
 import Foundation
 import Darwin
+import os
 
 // MARK: - BTimeUtils
 // btime_utils.py の移植。
@@ -7,6 +8,8 @@ import Darwin
 // すべてのファイル移動はこのモジュール経由で行い、移動後に btime を復元する。
 
 enum BTimeUtils {
+
+    private static let log = Logger(subsystem: "com.itotsum.imanage", category: "BTimeUtils")
 
     // MARK: - btime 取得
 
@@ -58,9 +61,16 @@ enum BTimeUtils {
 
         try FileManager.default.moveItem(at: src, to: dest)
 
-        // 移動後に btime を復元（失敗は silent）
+        // 移動後に btime を復元する。同一ボリューム内の move では元々保たれるため
+        // 通常は変化しないが、跨ボリューム移動では復元が必須になる。
+        // 復元に失敗しても移動自体は成立しているので処理は続けるが、
+        // 「btime を変更しない」ポリシーが破れた可能性があるので必ず記録する。
         if let bt = btime {
-            try? setBirthTime(atPath: dest.path, to: bt)
+            do {
+                try setBirthTime(atPath: dest.path, to: bt)
+            } catch {
+                log.error("btime を復元できませんでした: \(dest.path, privacy: .public) — \(error.localizedDescription, privacy: .public)")
+            }
         }
         return true
     }

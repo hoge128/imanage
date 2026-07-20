@@ -219,6 +219,10 @@ struct DestinationMenu: View {
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
-        return panel.runModal() == .OK ? panel.url : nil
+        guard panel.runModal() == .OK, let url = panel.url else { return nil }
+        // 出力先はパス文字列で永続化されるため、再起動後も書き込めるよう
+        // ここでブックマーク化しておく。
+        SecurityScope.shared.remember(url)
+        return url
     }
 }

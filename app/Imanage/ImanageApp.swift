@@ -28,10 +28,16 @@ struct ImanageApp: App {
                     organizeStore.settings = settingsStore
                     watcherStore.settings = settingsStore
                     appDelegate.watcherStore = watcherStore
+                    // 保存済みの出力先・監視フォルダへのアクセスを取り戻してから
+                    // 監視を開始する（サンドボックス下では権限がないと即失敗する）。
+                    SecurityScope.shared.restoreAll()
                     watcherStore.startIfEnabled()
                 }
         }
         .commands {
+            CommandGroup(replacing: .appInfo) {
+                AboutMenuButton()
+            }
             CommandGroup(replacing: .undoRedo) {
                 Button(String(localized: "元に戻す（ファイル振り分け）")) {
                     organizeStore.undo()
@@ -45,6 +51,29 @@ struct ImanageApp: App {
             SettingsView()
                 .environment(settingsStore)
                 .environment(watcherStore)
+        }
+
+        // 標準の About パネルを AboutView に差し替えるための単独ウィンドウ
+        Window(String(localized: "imanage について"), id: ImanageApp.aboutWindowID) {
+            AboutView()
+        }
+        .windowResizability(.contentSize)
+        .windowToolbarStyle(.unifiedCompact)
+        .restorationBehavior(.disabled)
+        .commandsRemoved()
+    }
+
+    static let aboutWindowID = "about"
+}
+
+/// `CommandGroup` 内では `openWindow` を直接引けないため、View に切り出している。
+private struct AboutMenuButton: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button(String(localized: "imanage について")) {
+            NSApp.activate(ignoringOtherApps: true)
+            openWindow(id: ImanageApp.aboutWindowID)
         }
     }
 }

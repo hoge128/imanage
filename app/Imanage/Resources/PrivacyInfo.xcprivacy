@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Imanage は一切のデータを収集・送信しない。 -->
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+
+	<!-- Apple が "required reason API" に指定している API の使用理由宣言。 -->
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<!--
+			  ファイルタイムスタンプ:
+			    Core/BTimeUtils.swift  … stat(2) / setattrlist(2) による btime の読み書き
+			    Core/ExifReader.swift  … attributesOfItem(atPath:) の .creationDate
+			  いずれもユーザーが選んだファイルの撮影日時を画面に出し、
+			  振り分け先フォルダの決定に使うためのもの。端末外へは一切送らない。
+			-->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>DDA9.1</string>
+			</array>
+		</dict>
+		<dict>
+			<!--
+			  UserDefaults: Stores/SettingsStore.swift のアプリ設定と
+			  Core/SecurityScope.swift のブックマーク保存。自アプリ内でのみ読み書きする。
+			-->
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

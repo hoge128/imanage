@@ -62,6 +62,9 @@ final class OrganizeStore {
     /// 1 ユニットにまとめる。ファイルを含むフォルダはサブフォルダまで再帰的に収集する。
     func handleDrop(_ urls: [URL]) {
         guard let settings, !isExecuting else { return }
+        // サンドボックス下ではドロップで得た権限がその場限りなので、非同期のスキャンへ
+        // 渡す前にブックマーク化して確保しておく。
+        urls.forEach { SecurityScope.shared.remember($0) }
         if didExecute { reset() }  // 完了後の新規ドロップは作り直し
         // 新規セッション（入力なし）の初回ドロップは既定の出力先を初期選択に反映する。
         // 既定未設定なら何もしない（現在の選択を維持）。同一セッションへの追加では発火しない。
@@ -222,6 +225,16 @@ final class OrganizeStore {
 
     func execute() {
         guard let plan, let settings, !isExecuting else { return }
+        // サンドボックス下では、ドロップで得られる権限はドロップされた項目自身に限られる。
+        // 「ドロップ元と同じ場所」でファイル単体をドロップした場合、書き込み先はその親
+        // フォルダになり権限がないため、ここで一度だけユーザーに許可を求める。
+        guard SecurityScope.shared.ensureAccess(
+            to: plan.destRoot,
+            message: String(localized: "このフォルダへ写真を振り分けるには、アクセスを許可してください。"))
+        else {
+            statusMessage = String(localized: "出力先フォルダへのアクセスが許可されなかったため中止しました")
+            return
+        }
         let config = settings.config
         // 実行後に空フォルダ掃除の対象にするルート（フォルダをドラッグした入力のみ）
         let folderRoots = inputUnits.filter { $0.isFolderInput }.map { $0.rootURL }
@@ -325,6 +338,18 @@ final class OrganizeStore {
         } else {
             statusMessage = String(localized: "取り消す操作がありません")
             return
+        }
+
+        // 書き戻し先の親フォルダに権限がないと移動が失敗する。fixed モードで
+        // ファイル単体をドロップした場合など、元の場所の権限を持っていないことがある。
+        for dir in journal.undoTargetDirectories where !SecurityScope.shared.hasAccess(to: dir) {
+            guard SecurityScope.shared.ensureAccess(
+                to: dir,
+                message: String(localized: "写真を元の場所へ戻すには、このフォルダへのアクセスを許可してください。"))
+            else {
+                statusMessage = String(localized: "元の場所へのアクセスが許可されなかったため中止しました")
+                return
+            }
         }
 
         isExecuting = true

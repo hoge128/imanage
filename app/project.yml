@@ -38,21 +38,37 @@ targets:
     deploymentTarget: "26.0"
     sources:
       - path: Imanage
+    entitlements:
+      # xcodegen が generate のたびにこのプロパティから .entitlements を再生成するため、
+      # サンドボックスのキーは（ファイルを直接編集せず）ここに書くこと。
+      path: Imanage/Imanage.entitlements
+      properties:
+        # Mac App Store 配布には App Sandbox が必須。
+        com.apple.security.app-sandbox: true
+        # ドロップ / NSOpenPanel でユーザーが選んだファイル・フォルダの読み書き。
+        com.apple.security.files.user-selected.read-write: true
+        # 選んだ出力先を再起動後も使えるようにする app-scoped bookmark
+        # （Core/SecurityScope.swift）。
+        com.apple.security.files.bookmarks.app-scope: true
     settings:
       base:
         SWIFT_VERSION: 6.0
         MACOSX_DEPLOYMENT_TARGET: "26.0"
         PRODUCT_BUNDLE_IDENTIFIER: com.itotsum.imanage
-        PRODUCT_NAME: Imanage
+        # ブランド表記は小文字 imanage。App Store 検証は .app 名と CFBundleName の
+        # 一致を求めるため、PRODUCT_NAME / CFBundleName / CFBundleDisplayName を揃える。
+        PRODUCT_NAME: imanage
         SWIFT_EMIT_LOC_STRINGS: YES
         ENABLE_HARDENED_RUNTIME: YES
+        DEVELOPMENT_TEAM: KTQ8JQW28L
+        CODE_SIGN_STYLE: Automatic
         # Icon Composer 形式（Resources/AppIcon.icon）をアプリアイコンに使う
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     info:
       path: Imanage/Resources/Info.plist
       properties:
-        CFBundleName: Imanage
-        CFBundleDisplayName: Imanage
+        CFBundleName: imanage
+        CFBundleDisplayName: imanage
         CFBundleDevelopmentRegion: ja
         CFBundleLocalizations:
           - ja
@@ -63,5 +79,8 @@ targets:
         NSHumanReadableDescription: "EXIF-based photo file organizer"
         NSHumanReadableCopyright: "Copyright © 2026 hoge128 (Tsuyoshi Ito). All rights reserved."
         LSApplicationCategoryType: "public.app-category.photography"
+        # 独自の暗号化を一切使わないため輸出コンプライアンス審査は不要。
+        # これが無いと ASC がビルドごとに輸出コンプライアンスの回答を求めてくる。
+        ITSAppUsesNonExemptEncryption: false
         # メニューバー常駐（ウィンドウを閉じても Dock に残さない場合は true に変更）
         LSUIElement: false

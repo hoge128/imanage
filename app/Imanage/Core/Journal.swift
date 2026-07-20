@@ -178,6 +178,17 @@ struct Journal: Sendable {
         return result
     }
 
+    /// undo で書き戻す先のディレクトリ（move の src の親）を重複なく返す。
+    /// サンドボックス下ではここへの書き込み権限が要るため、実行前に確認する。
+    var undoTargetDirectories: [URL] {
+        var seen = Set<String>()
+        return actions.compactMap { action -> URL? in
+            guard action.type == "move", let src = action.src else { return nil }
+            let dir = URL(fileURLWithPath: src).deletingLastPathComponent()
+            return seen.insert(dir.path).inserted ? dir : nil
+        }
+    }
+
     // MARK: - Private helpers
 
     private func actionToDict(_ a: Action) -> [String: Any] {
@@ -192,7 +203,12 @@ struct Journal: Sendable {
 // MARK: - ジャーナルファイルパス
 
 /// ~/.local/state/imanage/last_operation.json
-/// CLI 版 JOURNAL_PATH と同一パスを使用（`imanage --undo` との相互運用）。
+///
+/// CLI 版 JOURNAL_PATH と同じ相対パスを使う。ただし App Sandbox 下では
+/// homeDirectoryForCurrentUser がアプリコンテナ
+/// (~/Library/Containers/com.itotsum.imanage/Data) を返すため、実体は
+/// コンテナ内に置かれ、CLI の `imanage --undo` との相互運用はできない。
+/// アプリ単体の undo（起動をまたぐものも含む）は従来どおり動作する。
 private let journalURL: URL = {
     let home = FileManager.default.homeDirectoryForCurrentUser
     return home
