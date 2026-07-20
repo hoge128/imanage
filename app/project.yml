@@ -1,7 +1,7 @@
 name: Imanage
 
 options:
-  bundleIdPrefix: io.github.imanage
+  bundleIdPrefix: com.itotsum
   deploymentTarget:
     macOS: "26.0"
   xcodeVersion: "26.0"
@@ -42,7 +42,7 @@ targets:
       base:
         SWIFT_VERSION: 6.0
         MACOSX_DEPLOYMENT_TARGET: "26.0"
-        PRODUCT_BUNDLE_IDENTIFIER: io.github.imanage
+        PRODUCT_BUNDLE_IDENTIFIER: com.itotsum.imanage
         PRODUCT_NAME: Imanage
         SWIFT_EMIT_LOC_STRINGS: YES
         ENABLE_HARDENED_RUNTIME: YES
@@ -57,7 +57,7 @@ targets:
         CFBundleLocalizations:
           - ja
           - en
-        CFBundleIdentifier: io.github.imanage
+        CFBundleIdentifier: com.itotsum.imanage
         CFBundleVersion: "1"
         CFBundleShortVersionString: "0.1.0"
         NSHumanReadableDescription: "EXIF-based photo file organizer"
