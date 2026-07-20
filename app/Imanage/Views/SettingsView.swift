@@ -9,9 +9,9 @@ struct SettingsView: View {
     var body: some View {
         @Bindable var settings = settings
 
-        TabView {
-            // MARK: 一般設定
-            Form {
+        // 設定項目が少ないためタブに分けず 1 画面にまとめている
+        Form {
+            Section(String(localized: "一般")) {
                 Picker(String(localized: "言語"), selection: $settings.language) {
                     ForEach(SettingsStore.Language.allCases) { lang in
                         Text(lang.displayName).tag(lang)
@@ -22,66 +22,58 @@ struct SettingsView: View {
                     showRestartAlert = true
                 }
             }
-            .padding(20)
-            .tabItem {
-                Label(String(localized: "一般"), systemImage: "gearshape")
-            }
 
-            // MARK: 振り分け設定
-            Form {
-                Text("出力先は移動先パネル、フォルダ階層はメイン画面上部で設定できます。")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
+            Section(String(localized: "振り分け")) {
                 Picker(String(localized: "XMP サイドカーの振り分け先"), selection: $settings.xmpPairIsJpg) {
                     Text(verbatim: "raw/").tag(false)
                     Text(verbatim: "jpg/").tag(true)
                 }
                 .pickerStyle(.radioGroup)
-            }
-            .padding(20)
-            .tabItem {
-                Label(String(localized: "振り分け"), systemImage: "folder")
-            }
 
-            // MARK: フォルダ監視設定
-            Form {
-                Toggle(String(localized: "フォルダ監視を有効にする"), isOn: $settings.watcherEnabled)
-                Text("監視元フォルダに追加されたファイルを自動で振り分け先へ整理します。処理中はメニューバーのアイコンが回転します。")
+                Text("出力先は移動先パネル、フォルダ階層はメイン画面上部で設定できます。")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
 
-                HStack {
-                    TextField(String(localized: "監視元フォルダ（A）"), text: $settings.watcherSourcePath)
-                        .textFieldStyle(.roundedBorder)
-                    Button(String(localized: "選択…")) {
-                        if let url = Self.pickFolder() { settings.watcherSourcePath = url.path }
-                    }
-                }
-                HStack {
-                    TextField(String(localized: "振り分け先フォルダ（B）"), text: $settings.watcherDestPath)
-                        .textFieldStyle(.roundedBorder)
-                    Button(String(localized: "選択…")) {
-                        if let url = Self.pickFolder() { settings.watcherDestPath = url.path }
-                    }
-                }
+            // MARK: フォルダ監視（FeatureFlags.folderWatcher で切り離し中）
+            if FeatureFlags.folderWatcher {
+                Section(String(localized: "フォルダ監視")) {
+                    Toggle(String(localized: "フォルダ監視を有効にする"), isOn: $settings.watcherEnabled)
 
-                if watcher.isWatching {
-                    Label(String(localized: "監視中"), systemImage: "eye")
-                        .foregroundStyle(.green)
-                }
-                if let message = watcher.lastActivityMessage {
-                    Text(message)
+                    HStack {
+                        TextField(String(localized: "監視元フォルダ（A）"), text: $settings.watcherSourcePath)
+                            .textFieldStyle(.roundedBorder)
+                        Button(String(localized: "選択…")) {
+                            if let url = Self.pickFolder() { settings.watcherSourcePath = url.path }
+                        }
+                    }
+                    HStack {
+                        TextField(String(localized: "振り分け先フォルダ（B）"), text: $settings.watcherDestPath)
+                            .textFieldStyle(.roundedBorder)
+                        Button(String(localized: "選択…")) {
+                            if let url = Self.pickFolder() { settings.watcherDestPath = url.path }
+                        }
+                    }
+
+                    if watcher.isWatching {
+                        Label(String(localized: "監視中"), systemImage: "eye")
+                            .foregroundStyle(.green)
+                    }
+                    if let message = watcher.lastActivityMessage {
+                        Text(message)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Text("監視元フォルダに追加されたファイルを自動で振り分け先へ整理します。処理中はメニューバーのアイコンが回転します。")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
-            .padding(20)
-            .tabItem {
-                Label(String(localized: "フォルダ監視"), systemImage: "eye")
-            }
         }
-        .frame(width: 480)
+        .formStyle(.grouped)
+        .frame(width: 460)
+        .fixedSize(horizontal: false, vertical: true)
         .onChange(of: settings.watcherEnabled) { _, _ in watcher.restart() }
         .onChange(of: settings.watcherSourcePath) { _, _ in watcher.restart() }
         .onChange(of: settings.watcherDestPath) { _, _ in watcher.restart() }

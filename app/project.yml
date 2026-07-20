@@ -61,7 +61,7 @@ targets:
         CFBundleVersion: "1"
         CFBundleShortVersionString: "0.1.0"
         NSHumanReadableDescription: "EXIF-based photo file organizer"
-        NSHumanReadableCopyright: "Copyright © 2026 hoge128. All rights reserved."
+        NSHumanReadableCopyright: "Copyright © 2026 hoge128 (Tsuyoshi Ito). All rights reserved."
         LSApplicationCategoryType: "public.app-category.photography"
         # メニューバー常駐（ウィンドウを閉じても Dock に残さない場合は true に変更）
         LSUIElement: false

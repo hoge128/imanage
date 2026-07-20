@@ -26,6 +26,7 @@
 		92A40A0EF7281C2B394A5409 /* FileOrganizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20257A390E6E4A87DE7BE7D4 /* FileOrganizer.swift */; };
 		96617FCFC2754196E11BFFA7 /* ImanageConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3080BB6CA80881B03B373D5C /* ImanageConfig.swift */; };
 		9CB5E46CDD728986A40B4F60 /* FolderWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 204DA9CEA9D6F6310B49970B /* FolderWatcher.swift */; };
+		AC523BE660B74163E3E96344 /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9303EE9A432522AF6B556CC8 /* FeatureFlags.swift */; };
 		B6C1C36C3C63E708461A5D83 /* DropZoneView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2F47D60307DBE77A516B0E0 /* DropZoneView.swift */; };
 		B7646EA91C799725408D3600 /* HierarchyField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5239C1593462D7A536D61F17 /* HierarchyField.swift */; };
 		D48E9C06B4304D25F1C23BA9 /* ExifReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = A412DE78FDB1561D31B9B813 /* ExifReader.swift */; };
@@ -51,6 +52,7 @@
 		7278CF8CD7A4EEC7220122B6 /* WatcherStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatcherStore.swift; sourceTree = "<group>"; };
 		8B310E39BAD38C1D0E997771 /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
 		8CC5911B62578908A16BAB41 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		9303EE9A432522AF6B556CC8 /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
 		952F9EFAF204B8C72D65B4E3 /* Imanage.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Imanage.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		97DB87E01CB4535DA05C13FF /* SettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsStore.swift; sourceTree = "<group>"; };
 		9DF45844250759827B06DD04 /* DestinationBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DestinationBarView.swift; sourceTree = "<group>"; };
@@ -86,6 +88,7 @@
 			children = (
 				413CD305F371D4623BD404FD /* BTimeUtils.swift */,
 				A412DE78FDB1561D31B9B813 /* ExifReader.swift */,
+				9303EE9A432522AF6B556CC8 /* FeatureFlags.swift */,
 				20257A390E6E4A87DE7BE7D4 /* FileOrganizer.swift */,
 				5239C1593462D7A536D61F17 /* HierarchyField.swift */,
 				3080BB6CA80881B03B373D5C /* ImanageConfig.swift */,
@@ -235,6 +238,7 @@
 				4C45F44690CBF22A06ED409C /* DestinationBarView.swift in Sources */,
 				B6C1C36C3C63E708461A5D83 /* DropZoneView.swift in Sources */,
 				D48E9C06B4304D25F1C23BA9 /* ExifReader.swift in Sources */,
+				AC523BE660B74163E3E96344 /* FeatureFlags.swift in Sources */,
 				92A40A0EF7281C2B394A5409 /* FileOrganizer.swift in Sources */,
 				32D31172BFF07A78CFF008BE /* FolderTree.swift in Sources */,
 				9CB5E46CDD728986A40B4F60 /* FolderWatcher.swift in Sources */,

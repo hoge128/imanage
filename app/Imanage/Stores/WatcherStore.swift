@@ -20,14 +20,18 @@ final class WatcherStore {
     /// FSEvents 発火後の集約待ちタスク（連続コピー中の多重実行を防ぐ）
     private var pendingTask: Task<Void, Never>?
 
-    var isEnabled: Bool { settings?.watcherEnabled ?? false }
+    /// フラグが無効なら、設定に true が残っていても監視は動かさない
+    var isEnabled: Bool {
+        FeatureFlags.folderWatcher && (settings?.watcherEnabled ?? false)
+    }
 
     func startIfEnabled() {
-        guard let settings, settings.watcherEnabled else { return }
+        guard isEnabled else { return }
         start()
     }
 
     func start() {
+        guard FeatureFlags.folderWatcher else { return }
         guard let settings,
               !settings.watcherSourcePath.isEmpty,
               !settings.watcherDestPath.isEmpty else { return }
