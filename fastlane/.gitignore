@@ -1,0 +1,12 @@
+# fastlane 実行時生成物
+report.xml
+Preview.html
+screenshots/screenshots.html
+README.md
+
+# App Store Connect API キー。絶対にコミットしない
+*.p8
+
+# 審査連絡先のメールアドレス（個人情報のためリポジトリに含めない。
+# ローカルにのみ置き、fastlane deliver 実行時に読まれる）
+metadata/review_information/email_address.txt

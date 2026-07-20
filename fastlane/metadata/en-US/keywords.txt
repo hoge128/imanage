@@ -1,0 +1,1 @@
+photo organizer,sort,folder,RAW,JPG,XMP,camera,lens,rating,capture date,offline,mirrorless,DSLR

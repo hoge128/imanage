@@ -1,0 +1,8 @@
+The first release of imanage.
+
+• Sorts photos into folders based on their EXIF
+• Previews the resulting folder tree before anything moves
+• 24 hierarchy fields you can reorder freely and save as presets
+• Command-Z undoes any run
+• File creation time (btime) is preserved
+• RAW files and XMP sidecars move together with their JPG

@@ -1,0 +1,14 @@
+# fastlane Appfile — Imanage (Mac App Store)
+# https://docs.fastlane.tools/advanced/#appfile
+
+app_identifier("com.itotsum.imanage")
+team_id("KTQ8JQW28L") # Apple Developer Team ID
+
+# 認証は App Store Connect API キー（.p8）を使う。scripts/do-release-mas.sh が
+# 下記の環境変数を読み、fastlane deliver に --api_key_path で渡す:
+#   ASC_KEY_ID     … API キー ID（例: 2X9R4HXF34）
+#   ASC_ISSUER_ID  … Issuer ID（UUID）
+#   ASC_KEY_PATH   … AuthKey_<KEY_ID>.p8 の絶対パス（リポジトリ外に置くこと）
+#
+# Apple ID + アプリ用パスワードで認証する場合のみ、以下を設定:
+# apple_id("<Apple ID のメールアドレス>")

@@ -1,0 +1,33 @@
+imanage is a macOS app for people who shoot photos with a camera. It does one thing: file your photos into folders.
+
+After a shoot, sorting hundreds of images off the card into folders by date and camera is quiet, repetitive work. imanage replaces it with a single drop.
+
+■ What it does
+
+• Drop it, see it — Drop in files or folders and the resulting folder tree appears immediately as a preview. Not a single photo moves until you press Organize.
+
+• Build any hierarchy — Drag 24 fields — maker, model, capture date, lens, F-number, ISO, rating and more — into any order you like. Save the orders you use often as presets and recall them in one click.
+
+• Always undoable — Every run is journaled, so a single Command-Z puts everything back where it was.
+
+• Creation time is never touched — File birth time (btime) is preserved exactly. After organizing, the Finder still shows the day you took the shot.
+
+• Keeps JPG and RAW together — Matching RAW files and XMP sidecars are never left behind. Split JPG and RAW into separate folders, or keep them side by side.
+
+• Reads XMP star ratings — From sidecar files or embedded XMP alike, so you can file by rating.
+
+• Safe deletion — Nothing is ever erased outright. Deletions always go through the macOS Trash.
+
+• Japanese / English — The interface follows your system language, or you can pin it in Settings.
+
+imanage does not develop, edit or export. It never touches the contents of your photos — only where they live.
+
+■ Made for you if
+
+• You shoot RAW+JPG and the filing never keeps up with the shooting
+• You have your own folder rules — like maker/model/date — and want them kept
+• You manage photos in plain folders, not in a catalog app
+
+■ Privacy
+
+imanage collects and transmits no personal information. Reading your photos and filing them into folders happens entirely on your Mac. There is no network communication and no analytics of any kind.

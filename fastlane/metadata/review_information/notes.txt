@@ -1,0 +1,9 @@
+imanage is a fully offline photo file organizer. No account or login is required.
+
+How to test:
+1. Launch the app.
+2. Click "Choose Files…" (or drop photo files / a folder onto the window) and pick any JPEG photos that contain camera EXIF.
+3. A preview tree of the destination folders appears. Click the Organize button to move the files.
+4. Cmd-Z undoes the operation and restores every file to its original location.
+
+The app never modifies photo contents and never sends any data over the network.
