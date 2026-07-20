@@ -5,3 +5,18 @@ src/imanage/_version.py
 build/
 dist/
 *.spec
+
+# macOS
+.DS_Store
+
+# Xcode
+# project.pbxproj は xcodegen の生成物だが、ビルド再現のため追跡している。
+# 一方 xcuserdata はユーザー名やウィンドウ状態を含むので追跡しない。
+xcuserdata/
+*.xcuserstate
+DerivedData/
+
+# LP（VitePress）
+site/node_modules/
+site/.vitepress/cache/
+site/.vitepress/dist/
