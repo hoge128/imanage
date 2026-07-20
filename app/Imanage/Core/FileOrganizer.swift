@@ -35,7 +35,7 @@ struct FileOrganizer: Sendable {
                     journal.recordMkdir(path: dir.path)
                 }
             } catch {
-                result.errors.append("ディレクトリ作成失敗: \(destDir.path): \(error.localizedDescription)")
+                result.errors.append(String(localized: "ディレクトリ作成失敗: \(destDir.path): \(error.localizedDescription)"))
                 progress(index + 1, total)
                 continue
             }
@@ -51,7 +51,7 @@ struct FileOrganizer: Sendable {
                     result.skippedExisting.append(move.source)
                 }
             } catch {
-                result.errors.append("移動失敗: \(move.source.path): \(error.localizedDescription)")
+                result.errors.append(String(localized: "移動失敗: \(move.source.path): \(error.localizedDescription)"))
             }
 
             progress(index + 1, total)

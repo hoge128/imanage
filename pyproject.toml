@@ -26,5 +26,8 @@ package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+imanage = ["locale/en/LC_MESSAGES/imanage.mo", "locale/en/LC_MESSAGES/imanage.po"]
+
 [tool.setuptools_scm]
 write_to = "src/imanage/_version.py"

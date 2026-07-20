@@ -1,0 +1,353 @@
+# English translations for imanage
+# Copyright (C) 2026 imanage authors
+# This file is distributed under the same license as the imanage package.
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+
+# --- core.py: OrganizeCommand ---
+msgid "[処理内容]"
+msgstr "[Plan]"
+
+msgid "EXIFキャッシュ"
+msgstr "EXIF cache"
+
+msgid "EXIFスキャン"
+msgstr "EXIF scan"
+
+msgid "ルーズファイル {n} 件を振り分け後、以下へ整理します:"
+msgstr "Sorting {n} loose file(s) into the following directories:"
+
+msgid "整理対象のファイルがありません"
+msgstr "No files to organize"
+
+msgid "{total} 件のファイルを以下へ整理します:"
+msgstr "Organizing {total} file(s) into the following directories:"
+
+msgid "({count} 件)"
+msgstr "({count} file(s))"
+
+msgid "整理先: {dest_label}"
+msgstr "Destination: {dest_label}"
+
+msgid "(各ディレクトリ内・in-place)"
+msgstr "(in-place, within each directory)"
+
+msgid "対象ディレクトリ: {n} 件\n"
+msgstr "{n} target directory(ies)\n"
+
+msgid "整理対象ディレクトリが見つかりませんでした"
+msgstr "No directories to organize were found"
+
+# --- core.py: DeleteCommand / SyncCommand ---
+msgid "ファイルを振り分けます"
+msgstr "Sorting files"
+
+msgid "    JPG/現像済み → {path}/"
+msgstr "    JPG/Retouched → {path}/"
+
+msgid "    RAW          → {path}/"
+msgstr "    RAW          → {path}/"
+
+msgid "振り分け後、孤立 RAW をゴミ箱に移動します"
+msgstr "After sorting, orphan RAW files will be moved to Trash"
+
+msgid "振り分け後、孤立 RAW 削除 + XMP 同期を行います"
+msgstr "After sorting, orphan RAW files will be removed and XMP will be synced"
+
+msgid "孤立 RAW {n} 件{xmp_note}をゴミ箱に移動します"
+msgstr "Moving {n} orphan RAW file(s){xmp_note} to Trash"
+
+msgid " (XMP サイドカー {n} 件を含む)"
+msgstr " (including {n} XMP sidecar(s))"
+
+msgid "XMPスキャン"
+msgstr "XMP scan"
+
+msgid "JPG {n} 件の XMP を {raw_dir}/ 配下の .xmp サイドカーへ同期します"
+msgstr "Syncing XMP from {n} JPG file(s) to .xmp sidecars under {raw_dir}/"
+
+msgid "Rating/Label あり: {n} 件"
+msgstr "Rating/Label present: {n} file(s)"
+
+msgid "Rating/Label 未設定: {n} 件"
+msgstr "Rating/Label not set: {n} file(s)"
+
+msgid "XMP なし (未処理): {n} 件"
+msgstr "No XMP (not yet processed): {n} file(s)"
+
+# --- core.py: DefaultCommand ---
+msgid "JPGスキャン"
+msgstr "JPG scan"
+
+msgid "JPG {n} 件を振り分けます"
+msgstr "Sorting {n} JPG file(s)"
+
+msgid "通常    → {path}/  ({n} 件)"
+msgstr "Normal  → {path}/  ({n} file(s))"
+
+msgid "現像済み → {path}/  ({n} 件)"
+msgstr "Retouched → {path}/  ({n} file(s))"
+
+msgid "RAW {n} 件 → {path}/"
+msgstr "RAW {n} file(s) → {path}/"
+
+msgid "XMP確認"
+msgstr "XMP check"
+
+msgid "XMP 書き込み: {n} 件"
+msgstr "XMP write: {n} file(s)"
+
+msgid "XMP 処理済み: {n} 件 (スキップ)"
+msgstr "XMP already processed: {n} file(s) (skipped)"
+
+msgid "既に処理済みです。スキップします。"
+msgstr "Already processed. Skipping."
+
+# --- core.py: MetaCommand ---
+msgid "JPG {n} 件 ({path}/) の XMP を"
+msgstr "Writing XMP from {n} JPG file(s) ({path}/)"
+
+msgid "RAW {n} 件 ({path}/) の .xmp サイドカーへ書き込みます"
+msgstr "into .xmp sidecars for {n} RAW file(s) ({path}/)"
+
+msgid "[処理内容] jpg/raw 構造を持つディレクトリが見つかりませんでした"
+msgstr "[Plan] No directories with jpg/raw structure were found"
+
+msgid "jpg/raw 構造を持つディレクトリが見つかりませんでした"
+msgstr "No directories with jpg/raw structure were found"
+
+msgid "すべてのディレクトリに既にメタデータが適用されています"
+msgstr "Metadata has already been applied to all directories"
+
+msgid "中止しました"
+msgstr "Aborted"
+
+msgid "メタデータ適用"
+msgstr "Applying metadata"
+
+# --- core.py: RecursiveCommand ---
+msgid "ディレクトリ処理"
+msgstr "Processing directories"
+
+# --- core.py: RestoreRawDatetimeCommand ---
+msgid "\n[RAW から DateTimeOriginal を復元]\n対象ディレクトリ: {n} 件\n"
+msgstr "\n[Restoring DateTimeOriginal from RAW]\nTarget directories: {n}\n"
+
+msgid "JPG-RAW ペア: {n} 件"
+msgstr "JPG-RAW pairs: {n}"
+
+msgid "\n  合計: {total} 件の JPG を復元対象とします\n"
+msgstr "\n  Total: {total} JPG file(s) will be restored\n"
+
+msgid "DateTimeOriginal 復元"
+msgstr "Restoring DateTimeOriginal"
+
+msgid "復元対象のペアが見つかりませんでした"
+msgstr "No pairs found for restoration"
+
+msgid "復元エラー ({name}): {e}"
+msgstr "Restore error ({name}): {e}"
+
+msgid "  [{i}] {rel}\n      JPG: {jpg}  RAW: {raw}  孤立RAW: {orphan}"
+msgstr "  [{i}] {rel}\n      JPG: {jpg}  RAW: {raw}  Orphan RAW: {orphan}"
+
+msgid "\n  合計 孤立RAW: {total_orphan} 件  XMP 同期対象: {total_jpg} 件\n"
+msgstr "\n  Total orphan RAW: {total_orphan}  XMP sync targets: {total_jpg}\n"
+
+# --- core.py: _print_meta_preview ---
+msgid "\nメタデータ未適用: {pending} 件 / 全 {total} 件\n"
+msgstr "\nMetadata not yet applied: {pending} / {total} total\n"
+
+msgid "  [{i}] {rel}  JPG: {jpg}  RAW: {raw}"
+msgstr "  [{i}] {rel}  JPG: {jpg}  RAW: {raw}"
+
+msgid "\n適用済み (スキップ): {n} 件"
+msgstr "\nAlready applied (skipped): {n}"
+
+# --- core.py: _select_dirs ---
+msgid "適用するディレクトリ番号を入力 (例: 1 2 3 / all / q): "
+msgstr "Enter directory numbers to apply (e.g. 1 2 3 / all / q): "
+
+msgid "入力が正しくありません。再入力してください。"
+msgstr "Invalid input. Please try again."
+
+# --- core.py: dir_structure / imageContainer ---
+msgid "対象ファイルが見つかりません。処理をスキップします。"
+msgstr "No target files found. Skipping."
+
+msgid "ファイル振り分け"
+msgstr "Sorting files"
+
+msgid "スキップ: {name} は処理されません（対象外の拡張子）"
+msgstr "Skip: {name} has an unsupported extension"
+
+msgid "\n移動スキップ（移動先に同名ファイルが存在）: {n} 件"
+msgstr "\nMove skipped (file already exists at destination): {n} file(s)"
+
+msgid "ファイル移動"
+msgstr "Moving files"
+
+msgid "孤立RAW削除"
+msgstr "Removing orphan RAW"
+
+# --- core.py: main / imageContainer.date_organize ---
+msgid "\nやり直したい場合は: imanage --undo"
+msgstr "\nTo undo this operation, run: imanage --undo"
+
+msgid "\n続行しますか？ [y/N]: "
+msgstr "\nContinue? [y/N]: "
+
+msgid "config に [organize] destination が未設定です。~/.config/imanage/config.toml に destination を追加するか -O DEST のように CLI で指定してください。"
+msgstr "No [organize] destination set in config. Add 'destination' to ~/.config/imanage/config.toml or specify it via -O DEST."
+
+# --- core.py: argparse help ---
+msgid "Photographer Tool"
+msgstr "Photographer Tool"
+
+msgid "jpg ディレクトリに存在しない raw ファイルを削除する"
+msgstr "Delete RAW files that have no matching JPG in the jpg directory"
+
+msgid "jpg の XMP メタデータを同名 raw ファイルに同期する"
+msgstr "Sync XMP metadata from JPG files to their matching RAW files"
+
+msgid "(未使用)"
+msgstr "(unused)"
+
+msgid "jpg/raw を作成日時ごとの日付フォルダ (YYYYMMDD/jpg, YYYYMMDD/raw) に仕分ける"
+msgstr "Sort jpg/raw files into date folders (YYYYMMDD/jpg, YYYYMMDD/raw) by creation date"
+
+msgid "PATH 配下の jpg/raw 構造を持つすべてのディレクトリに -s を適用する"
+msgstr "Apply -s to all directories with a jpg/raw structure under PATH"
+
+msgid "ペアの RAW から DateTimeOriginal/Digitized を JPG EXIF に復元する（2026-04-25 以前に imanage を適用したファイルの修復用）"
+msgstr "Restore DateTimeOriginal/Digitized from paired RAW to JPG EXIF (for files processed by imanage before 2026-04-25)"
+
+msgid "エラーのみ出力する（スクリプト用）"
+msgstr "Output errors only (for scripting)"
+
+msgid "ファイル単位の処理詳細も表示する"
+msgstr "Show per-file processing details"
+
+msgid "ログをファイルに出力する（PATH 省略時: ~/.local/state/imanage/imanage.log）"
+msgstr "Write log to file (default path when PATH omitted: ~/.local/state/imanage/imanage.log)"
+
+msgid "config の destination 配下に整理する（DEST 指定で上書き）"
+msgstr "Organize into config destination (override with DEST)"
+
+msgid "cwd 配下を再帰的に destination 配下へ整理する（DEST 指定で上書き）"
+msgstr "Recursively organize cwd into destination (override with DEST)"
+
+msgid "cwd 配下を再帰的に各ディレクトリ内で整理する（in-place。初回の取り込み時に使用を推奨）"
+msgstr "Recursively organize cwd in-place within each directory (recommended for initial import)"
+
+msgid "メタデータが未適用のファイルに XMP を書き込む"
+msgstr "Write XMP to files that have not yet had metadata applied"
+
+msgid "XMP メタデータを書き込む（デフォルトは無効）"
+msgstr "Write XMP metadata (disabled by default)"
+
+msgid "XMP サイドカーを raw/ と jpg/ のどちらに振り分けるか（config を上書き、デフォルト: raw）"
+msgstr "Which directory to place XMP sidecars in: raw/ or jpg/ (overrides config, default: raw)"
+
+msgid "直前の操作を取り消す"
+msgstr "Undo the last operation"
+
+msgid "確認プロンプトをスキップして即実行する"
+msgstr "Skip confirmation prompt and execute immediately"
+
+# --- journal.py ---
+msgid "操作の取り消し"
+msgstr "Undoing operation"
+
+msgid "スキップ（ファイルが見つかりません）: {path}"
+msgstr "Skip (file not found): {path}"
+
+msgid "スキップ（移動先に既に存在）: {path}"
+msgstr "Skip (already exists at destination): {path}"
+
+msgid "スキップ（移動失敗）: {path}"
+msgstr "Skip (move failed): {path}"
+
+msgid "ゴミ箱に移動済み: {path} — macOS のゴミ箱から手動で復元してください"
+msgstr "Moved to Trash: {path} — please restore manually from the macOS Trash"
+
+msgid "スキップ（ゴミ箱移動失敗）: {path}: {e}"
+msgstr "Skip (move to Trash failed): {path}: {e}"
+
+msgid "{n} 件成功"
+msgstr "{n} succeeded"
+
+msgid "{n} 件スキップ"
+msgstr "{n} skipped"
+
+msgid "{n} 件要手動復元（ゴミ箱）"
+msgstr "{n} require manual restore (from Trash)"
+
+msgid "取り消し完了（{parts}）"
+msgstr "Undo complete ({parts})"
+
+msgid "取り消す操作がありません（ジャーナルが見つかりません）"
+msgstr "Nothing to undo (journal file not found)"
+
+msgid "ジャーナルの読み込みに失敗しました: {e}"
+msgstr "Failed to load journal: {e}"
+
+msgid "直前の操作は既に取り消し済みです"
+msgstr "The last operation has already been undone"
+
+msgid "取り消す操作がありません"
+msgstr "Nothing to undo"
+
+# --- xmp_handler.py ---
+msgid "サイドカーが存在しません。スキップ: {name}.xmp"
+msgstr "Sidecar not found. Skipping: {name}.xmp"
+
+msgid "Rating/Label 同期エラー ({path}): {e}"
+msgstr "Rating/Label sync error ({path}): {e}"
+
+msgid "メタデータ同期"
+msgstr "Syncing metadata"
+
+msgid "XMP 書き込みエラー ({path}): {e}"
+msgstr "XMP write error ({path}): {e}"
+
+msgid "XMP サイドカー書き込みエラー ({path}): {e}"
+msgstr "XMP sidecar write error ({path}): {e}"
+
+msgid "JPG XMP書き込み"
+msgstr "Writing JPG XMP"
+
+msgid "RAW XMPサイドカー"
+msgstr "RAW XMP sidecars"
+
+msgid "スキップ: RAW に撮影日時なし ({name})"
+msgstr "Skip: no capture datetime in RAW ({name})"
+
+# --- journal.py: undo ---
+msgid "戻し: {src} -> {dest}"
+msgstr "Restore: {src} -> {dest}"
+
+msgid "ゴミ箱へ移動: {path}"
+msgstr "Moved to Trash: {path}"
+
+msgid "ディレクトリをゴミ箱へ移動: {path}"
+msgstr "Moved directory to Trash: {path}"
+
+msgid "／"
+msgstr " / "
+
+# --- xmp_handler.py: EXIF 読み取り ---
+msgid "exiftool が見つかりません。RAW の撮影日時を読み飛ばします。"
+msgstr "exiftool not found; skipping RAW capture datetime."
+
+msgid "exiftool 読み取り失敗 ({name}): {e}"
+msgstr "exiftool read failed ({name}): {e}"
+
+msgid "EXIF {prop} 変換失敗 ({raw}): {e}"
+msgstr "EXIF {prop} conversion failed ({raw}): {e}"
+
+msgid "復元: {name} <- {dt}"
+msgstr "Restored: {name} <- {dt}"

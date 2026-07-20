@@ -6,6 +6,14 @@ options:
     macOS: "26.0"
   xcodeVersion: "26.0"
   generateEmptyDirectories: true
+  # Localizable.xcstrings の sourceLanguage と揃える（原文は日本語）
+  developmentLanguage: ja
+
+# String Catalog に含まれる言語。xcodegen 再生成でも失われないよう明示する。
+knownRegions:
+  - Base
+  - ja
+  - en
 
 schemes:
   Imanage:
@@ -45,6 +53,10 @@ targets:
       properties:
         CFBundleName: Imanage
         CFBundleDisplayName: Imanage
+        CFBundleDevelopmentRegion: ja
+        CFBundleLocalizations:
+          - ja
+          - en
         CFBundleIdentifier: io.github.imanage
         CFBundleVersion: "1"
         CFBundleShortVersionString: "0.1.0"

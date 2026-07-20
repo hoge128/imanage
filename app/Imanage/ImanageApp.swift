@@ -2,10 +2,21 @@ import SwiftUI
 
 @main
 struct ImanageApp: App {
+    /// 表示言語の上書きを最初の文字列参照より前に一度だけ適用する。
+    /// Bundle は最初のローカライズ参照時に言語を確定させてしまうため、
+    /// View の生成前（= init）に走らせる必要がある。
+    private static let bootstrap: Void = {
+        SettingsStore.applyLanguageOverride()
+    }()
+
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @State private var organizeStore = OrganizeStore()
     @State private var settingsStore = SettingsStore()
     @State private var watcherStore = WatcherStore()
+
+    init() {
+        _ = Self.bootstrap
+    }
 
     var body: some Scene {
         WindowGroup {

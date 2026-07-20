@@ -2,6 +2,7 @@ import logging
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from imanage.progress import make_bar
+from imanage.i18n import _
 from datetime import datetime
 
 logger = logging.getLogger("imanage.xmp_handler")
@@ -95,10 +96,10 @@ def _read_exif_datetimes_exiftool(file_path):
         }
         return {k: v for k, v in mapping.items() if v}
     except FileNotFoundError:
-        logger.debug("exiftool が見つかりません。RAW の撮影日時を読み飛ばします。")
+        logger.debug(_("exiftool が見つかりません。RAW の撮影日時を読み飛ばします。"))
         return {}
     except Exception as e:
-        logger.debug(f"exiftool 読み取り失敗 ({os.path.basename(file_path)}): {e}")
+        logger.debug(_("exiftool 読み取り失敗 ({name}): {e}").format(name=os.path.basename(file_path), e=e))
         return {}
 
 
@@ -122,7 +123,7 @@ def _restore_exif_dates_to_xmp(xmp, exif_dt):
         try:
             iso = _exif_dt_to_xmp(raw, exif_dt.get(off_prop))
         except Exception as e:
-            logger.debug(f"EXIF {prop} 変換失敗 ({raw!r}): {e}")
+            logger.debug(_("EXIF {prop} 変換失敗 ({raw}): {e}").format(prop=prop, raw=repr(raw), e=e))
             continue
         xmp.set_property(consts.XMP_NS_EXIF, prop, iso)
 
@@ -260,7 +261,7 @@ def _sync_one_jpg(jpg_path, meta_target, sidecar_index):
     sidecar_path = sidecar_index.get(stem)
 
     if sidecar_path is None:
-        logger.warning(f"サイドカーが存在しません。スキップ: {stem}.xmp")
+        logger.warning(_("サイドカーが存在しません。スキップ: {name}.xmp").format(name=stem))
         return
 
     jpg_xmpfile = XMPFiles(file_path=jpg_path, open_forupdate=False)
@@ -318,14 +319,14 @@ def sync_rating_to_raw(jpg_dirs, raw_dir, meta_target, target_jpg_extensions):
             executor.submit(_sync_one_jpg, jpg_path, meta_target, sidecar_index): jpg_path
             for jpg_path in jpg_paths
         }
-        with make_bar(as_completed(futures), total=len(futures), desc="メタデータ同期") as bar:
+        with make_bar(as_completed(futures), total=len(futures), desc=_("メタデータ同期")) as bar:
             for future in bar:
                 jpg_path = futures[future]
                 bar.set_postfix_str(os.path.basename(jpg_path), refresh=False)
                 try:
                     future.result()
                 except Exception as e:
-                    logger.error(f"Rating/Label 同期エラー ({jpg_path}): {e}")
+                    logger.error(_("Rating/Label 同期エラー ({path}): {e}").format(path=jpg_path, e=e))
 
 
 def is_already_applied(jpg_dirs: list, raw_dir: str, target_jpg_extensions: set) -> bool:
@@ -381,7 +382,7 @@ def _process_jpg_xmp(jpg_path):
             xmpfile.put_xmp(xmp)
             xmpfile.close_file()
     except Exception as e:
-        logger.error(f"XMP 書き込みエラー ({jpg_path}): {e}")
+        logger.error(_("XMP 書き込みエラー ({path}): {e}").format(path=jpg_path, e=e))
 
 
 def _process_raw_xmp(raw_path):
@@ -411,7 +412,7 @@ def _process_raw_xmp(raw_path):
             if j:
                 j.record_sidecar_created(sidecar_path)
     except Exception as e:
-        logger.error(f"XMP サイドカー書き込みエラー ({raw_path}): {e}")
+        logger.error(_("XMP サイドカー書き込みエラー ({path}): {e}").format(path=raw_path, e=e))
     return sidecar_path
 
 
@@ -439,7 +440,7 @@ def restore_datetime_from_raw(jpg_path, raw_path):
     """ペアの RAW から DateTimeOriginal/Digitized を読み、JPG EXIF に書き戻す。"""
     exif_dt = _read_exif_datetimes(raw_path)
     if not exif_dt.get("DateTimeOriginal") and not exif_dt.get("DateTimeDigitized"):
-        logger.warning(f"スキップ: RAW に撮影日時なし ({os.path.basename(raw_path)})")
+        logger.warning(_("スキップ: RAW に撮影日時なし ({name})").format(name=os.path.basename(raw_path)))
         return False
     XMPFiles, XMPMeta, _, _ = _libxmp()
     try:
@@ -451,10 +452,10 @@ def restore_datetime_from_raw(jpg_path, raw_path):
             _restore_exif_dates_to_xmp(xmp, exif_dt)
             xmpfile.put_xmp(xmp)
             xmpfile.close_file()
-        logger.debug(f"復元: {os.path.basename(jpg_path)} ← {exif_dt.get('DateTimeOriginal')}")
+        logger.debug(_("復元: {name} <- {dt}").format(name=os.path.basename(jpg_path), dt=exif_dt.get("DateTimeOriginal")))
         return True
     except Exception as e:
-        logger.error(f"復元エラー ({os.path.basename(jpg_path)}): {e}")
+        logger.error(_("復元エラー ({name}): {e}").format(name=os.path.basename(jpg_path), e=e))
         return False
 
 
@@ -474,7 +475,7 @@ def write_exif_to_xmp(jpg_dirs, raw_dir, target_jpg_extensions, target_raw_exten
     if jpg_paths:
         with ThreadPoolExecutor() as executor:
             futures = {executor.submit(_process_jpg_xmp, p): p for p in jpg_paths}
-            with make_bar(as_completed(futures), total=len(futures), desc="JPG XMP書き込み") as bar:
+            with make_bar(as_completed(futures), total=len(futures), desc=_("JPG XMP書き込み")) as bar:
                 for future in bar:
                     path = futures[future]
                     bar.set_postfix_str(os.path.basename(path), refresh=False)
@@ -504,7 +505,7 @@ def write_exif_to_xmp(jpg_dirs, raw_dir, target_jpg_extensions, target_raw_exten
     if raw_paths:
         with ThreadPoolExecutor() as executor:
             futures = {executor.submit(_process_raw_xmp, p): p for p in raw_paths}
-            with make_bar(as_completed(futures), total=len(futures), desc="RAW XMPサイドカー") as bar:
+            with make_bar(as_completed(futures), total=len(futures), desc=_("RAW XMPサイドカー")) as bar:
                 for future in bar:
                     path = futures[future]
                     bar.set_postfix_str(os.path.basename(path), refresh=False)

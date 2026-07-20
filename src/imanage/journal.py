@@ -12,6 +12,7 @@ import threading
 import logging
 
 from send2trash import send2trash
+from imanage.i18n import _
 
 logger = logging.getLogger("imanage.journal")
 
@@ -66,7 +67,7 @@ class Journal:
         skipped = 0
         trashed = 0
 
-        with make_bar(reversed_actions, desc="操作の取り消し") as bar:
+        with make_bar(reversed_actions, desc=_("操作の取り消し")) as bar:
             for action in bar:
                 t = action["type"]
                 display = os.path.basename(action.get("dest", action.get("path", "")))
@@ -76,24 +77,24 @@ class Journal:
                     src = action["src"]
                     dest = action["dest"]
                     if not os.path.exists(dest):
-                        logger.warning(f"スキップ（ファイルが見つかりません）: {dest}")
+                        logger.warning(_("スキップ（ファイルが見つかりません）: {path}").format(path=dest))
                         skipped += 1
                         continue
                     if os.path.exists(src):
-                        logger.warning(f"スキップ（移動先に既に存在）: {src}")
+                        logger.warning(_("スキップ（移動先に既に存在）: {path}").format(path=src))
                         skipped += 1
                         continue
                     src_dir = os.path.dirname(src)
                     os.makedirs(src_dir, exist_ok=True)
                     if btime_safe_move(dest, src_dir):
-                        logger.debug(f"戻し: {dest} -> {src_dir}")
+                        logger.debug(_("戻し: {src} -> {dest}").format(src=dest, dest=src_dir))
                         success += 1
                     else:
-                        logger.warning(f"スキップ（移動失敗）: {dest}")
+                        logger.warning(_("スキップ（移動失敗）: {path}").format(path=dest))
                         skipped += 1
 
                 elif t == "trash":
-                    logger.info(f"ゴミ箱に移動済み: {action['path']} — macOS のゴミ箱から手動で復元してください")
+                    logger.info(_("ゴミ箱に移動済み: {path} — macOS のゴミ箱から手動で復元してください").format(path=action['path']))
                     trashed += 1
 
                 elif t == "sidecar_created":
@@ -101,13 +102,13 @@ class Journal:
                     if os.path.exists(path):
                         try:
                             send2trash(path)
-                            logger.debug(f"ゴミ箱へ移動: {path}")
+                            logger.debug(_("ゴミ箱へ移動: {path}").format(path=path))
                             success += 1
                         except Exception as e:
-                            logger.warning(f"スキップ（ゴミ箱移動失敗）: {path}: {e}")
+                            logger.warning(_("スキップ（ゴミ箱移動失敗）: {path}: {e}").format(path=path, e=e))
                             skipped += 1
                     else:
-                        logger.warning(f"スキップ（ファイルが見つかりません）: {path}")
+                        logger.warning(_("スキップ（ファイルが見つかりません）: {path}").format(path=path))
                         skipped += 1
 
                 elif t == "mkdir":
@@ -115,16 +116,16 @@ class Journal:
                     if os.path.exists(path):
                         try:
                             send2trash(path)
-                            logger.debug(f"ディレクトリをゴミ箱へ移動: {path}")
+                            logger.debug(_("ディレクトリをゴミ箱へ移動: {path}").format(path=path))
                         except Exception as e:
-                            logger.warning(f"スキップ（ディレクトリのゴミ箱移動失敗）: {path}: {e}")
+                            logger.warning(_("スキップ（ゴミ箱移動失敗）: {path}: {e}").format(path=path, e=e))
 
-        parts = [f"{success} 件成功"]
+        parts = [_("{n} 件成功").format(n=success)]
         if skipped:
-            parts.append(f"{skipped} 件スキップ")
+            parts.append(_("{n} 件スキップ").format(n=skipped))
         if trashed:
-            parts.append(f"{trashed} 件要手動復元（ゴミ箱）")
-        logger.info(f"取り消し完了（{'／'.join(parts)}）")
+            parts.append(_("{n} 件要手動復元（ゴミ箱）").format(n=trashed))
+        logger.info(_("取り消し完了（{parts}）").format(parts=_("／").join(parts)))
 
         # 二重 undo を防ぐためジャーナルを済みとしてマーク
         try:
@@ -154,22 +155,22 @@ def get_journal() -> "Journal | None":
 def execute_undo_from_file() -> None:
     """ジャーナルファイルから直前の操作を取り消す"""
     if not os.path.isfile(JOURNAL_PATH):
-        logger.info("取り消す操作がありません（ジャーナルが見つかりません）")
+        logger.info(_("取り消す操作がありません（ジャーナルが見つかりません）"))
         return
 
     try:
         with open(JOURNAL_PATH, "r", encoding="utf-8") as f:
             data = json.load(f)
     except Exception as e:
-        logger.error(f"ジャーナルの読み込みに失敗しました: {e}")
+        logger.error(_("ジャーナルの読み込みに失敗しました: {e}").format(e=e))
         return
 
     if data.get("undone"):
-        logger.info("直前の操作は既に取り消し済みです")
+        logger.info(_("直前の操作は既に取り消し済みです"))
         return
 
     if not data.get("actions"):
-        logger.info("取り消す操作がありません")
+        logger.info(_("取り消す操作がありません"))
         return
 
     j = Journal()

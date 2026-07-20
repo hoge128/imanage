@@ -12,10 +12,13 @@ PIP        = $(VENV)/bin/pip
 
 # --- タスク定義 -------------------------
 
-.PHONY: all build install clean setup deps release
+LOCALE_DIR  = src/$(APP_NAME)/locale
+MSGFMT      = $(shell which msgfmt 2>/dev/null || echo /opt/homebrew/bin/msgfmt)
+
+.PHONY: all build install clean setup deps release mo
 
 # ビルド一括処理
-all: clean build install
+all: clean mo build install
 
 # システム依存関係 (macOS / Homebrew)
 deps:
@@ -43,7 +46,9 @@ build: setup
 		--hidden-import=tqdm \
 		--hidden-import=tqdm.auto \
 		--hidden-import=imanage.log \
+		--hidden-import=imanage.i18n \
 		--add-data "$(abspath src/imanage/config.toml):imanage" \
+		--add-data "$(abspath src/imanage/locale):imanage/locale" \
 		--paths src
 	codesign --force --deep --sign - $(DIST_DIR)/$(APP_NAME)-$(VERSION)/$(APP_NAME)-$(VERSION)
 	@echo "Build finished: $(DIST_DIR)/$(APP_NAME)-$(VERSION)/$(APP_NAME)-$(VERSION)"
@@ -68,6 +73,12 @@ install:
 clean:
 	@echo "=== Cleaning build files ==="
 	rm -rf build $(DIST_DIR) *.spec
+
+# .po → .mo のコンパイル（locale を更新したときに実行）
+mo:
+	@echo "=== Compiling message catalogs ==="
+	$(MSGFMT) $(LOCALE_DIR)/en/LC_MESSAGES/imanage.po -o $(LOCALE_DIR)/en/LC_MESSAGES/imanage.mo
+	@echo "Done."
 
 # --- テスト -------------------------
 

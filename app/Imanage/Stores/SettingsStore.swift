@@ -64,6 +64,43 @@ final class SettingsStore {
         didSet { defaults.set(chipHelpEnabled, forKey: Keys.chipHelpEnabled) }
     }
 
+    // MARK: - 表示言語
+    // "system"（macOS の設定に従う）/ "ja" / "en"。
+    // 実際の切替は起動時に AppleLanguages を上書きすることで行うため、
+    // 変更を反映するにはアプリの再起動が必要（SettingsView が再起動を促す）。
+    enum Language: String, CaseIterable, Identifiable {
+        case system
+        case ja
+        case en
+
+        var id: String { rawValue }
+
+        var displayName: String {
+            switch self {
+            case .system: String(localized: "システムに従う")
+            case .ja:     "日本語"
+            case .en:     "English"
+            }
+        }
+    }
+
+    var language: Language {
+        didSet { defaults.set(language.rawValue, forKey: Keys.language) }
+    }
+
+    /// 起動時に AppleLanguages を上書きする（ImanageApp のブートストラップから呼ぶ）。
+    /// UI より先、かつ最初の文字列参照より前に実行しなければ効かない。
+    static func applyLanguageOverride(defaults: UserDefaults = .standard) {
+        let saved = Language(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .system
+        switch saved {
+        case .system:
+            // システム設定に委ねる: 独自の上書きを取り除く
+            defaults.removeObject(forKey: Keys.appleLanguages)
+        case .ja, .en:
+            defaults.set([saved.rawValue], forKey: Keys.appleLanguages)
+        }
+    }
+
     // [応用1] フォルダ監視
     var watcherEnabled: Bool {
         didSet { defaults.set(watcherEnabled, forKey: Keys.watcherEnabled) }
@@ -91,6 +128,8 @@ final class SettingsStore {
         static let watcherSource = "watcherSourcePath"
         static let watcherDest = "watcherDestPath"
         static let pairingMigrated = "pairingMigrated_v1"
+        static let language = "language"
+        static let appleLanguages = "AppleLanguages"
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -122,13 +161,14 @@ final class SettingsStore {
         }
         self.defaultPresetID = defaults.string(forKey: Keys.defaultPresetID) ?? ""
 
+        self.language = Language(rawValue: defaults.string(forKey: Keys.language) ?? "") ?? .system
         self.xmpPairIsJpg = defaults.bool(forKey: Keys.xmpPairIsJpg)
         self.chipHelpEnabled = defaults.object(forKey: Keys.chipHelpEnabled) as? Bool ?? true
         self.watcherEnabled = defaults.bool(forKey: Keys.watcherEnabled)
         self.watcherSourcePath = defaults.string(forKey: Keys.watcherSource) ?? ""
         self.watcherDestPath = defaults.string(forKey: Keys.watcherDest) ?? ""
 
-        // 既定プリセットがあれば起動時に階層へ自動適用する（組み込み「規定」も対象）
+        // 既定プリセットがあれば起動時に階層へ自動適用する（組み込み「既定」も対象）
         if !defaultPresetID.isEmpty,
            let preset = allPresets.first(where: { $0.id.uuidString == defaultPresetID }) {
             self.hierarchy = preset.fields
@@ -201,12 +241,12 @@ final class SettingsStore {
 
     // MARK: - 階層プリセット
 
-    /// 組み込みの「規定」プリセット（削除・改名不可、常に一覧の先頭に表示）
+    /// 組み込みの「既定」プリセット（削除・改名不可、常に一覧の先頭に表示）
     static let builtinPresetID = UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
     static var builtinPreset: HierarchyPreset {
         HierarchyPreset(
             id: builtinPresetID,
-            name: String(localized: "規定"),
+            name: String(localized: "既定"),
             fields: [HierarchyField.maker.key, HierarchyField.model.key,
                      HierarchyField.date.key, HierarchyField.pairing.key])
     }
@@ -236,7 +276,7 @@ final class SettingsStore {
     }
 
     func removePreset(_ id: UUID) {
-        guard !isBuiltinPreset(id) else { return }  // 「規定」は削除不可
+        guard !isBuiltinPreset(id) else { return }  // 「既定」は削除不可
         hierarchyPresets.removeAll { $0.id == id }
         if defaultPresetID == id.uuidString { defaultPresetID = "" }
     }

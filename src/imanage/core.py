@@ -2,6 +2,7 @@
 import os, sys, shutil, glob, argparse
 from imanage.btime_utils import btime_safe_move
 from imanage import journal as _journal
+from imanage.i18n import _
 from collections import deque
 from datetime import datetime
 
@@ -123,7 +124,7 @@ def build_exif_cache(jpg_dir_path):
     if not os.path.isdir(jpg_dir_path):
         return cache
     files = list(os.listdir(jpg_dir_path))
-    with make_bar(files, desc="EXIFキャッシュ") as bar:
+    with make_bar(files, desc=_("EXIFキャッシュ")) as bar:
         for _file in bar:
             stem, dot_ext = os.path.splitext(_file)
             if dot_ext.lstrip(".") not in target_jpg_extensions:
@@ -165,9 +166,7 @@ class OrganizeCommand(BaseCommand):
         if self.dest_spec == '':
             dest = _config.get("organize", {}).get("destination")
             if not dest:
-                logger.error("config に [organize] destination が未設定です。"
-                             "~/.config/imanage/config.toml に destination を追加するか "
-                             "-O DEST のように CLI で指定してください。")
+                logger.error(_("config に [organize] destination が未設定です。~/.config/imanage/config.toml に destination を追加するか -O DEST のように CLI で指定してください。"))
                 sys.exit(2)
             return os.path.abspath(os.path.expanduser(dest))
         return os.path.abspath(os.path.expanduser(self.dest_spec))
@@ -179,7 +178,7 @@ class OrganizeCommand(BaseCommand):
                  and (os.path.splitext(f)[1].lstrip('.').lower() in all_exts
                       or os.path.splitext(f)[1].lower() == '.xmp')]
         hierarchy = _config.get("organize", {}).get("hierarchy", ["date"])
-        logger.info("[処理内容]")
+        logger.info(_("[処理内容]"))
         if loose:
             # JPG → RAW → XMP の順で処理することで XMP が同名 JPG の EXIF を参照できるようにソート
             loose_sorted = sorted(loose, key=lambda f: (
@@ -189,7 +188,7 @@ class OrganizeCommand(BaseCommand):
             ))
             loose_exif = {}
             dest_groups = {}
-            with make_bar(loose_sorted, desc="EXIFスキャン") as bar:
+            with make_bar(loose_sorted, desc=_("EXIFスキャン")) as bar:
                 for f in bar:
                     bar.set_postfix_str(f, refresh=False)
                     ext = os.path.splitext(f)[1].lstrip('.').lower()
@@ -209,9 +208,9 @@ class OrganizeCommand(BaseCommand):
                     dest_key = os.path.join(*[fields.get(h, "Unknown") for h in hierarchy], dir_name)
                     dest_groups[dest_key] = dest_groups.get(dest_key, 0) + 1
             self._exif_caches[path] = loose_exif
-            logger.info(f"  ルーズファイル {len(loose)} 件を振り分け後、以下へ整理します:")
+            logger.info("  " + _("ルーズファイル {n} 件を振り分け後、以下へ整理します:").format(n=len(loose)))
             for dest, count in sorted(dest_groups.items()):
-                logger.info(f"    {dest}/  ({count} 件)")
+                logger.info("    {}/  ({})".format(dest, _("({count} 件)").format(count=count)))
             return
 
         jpg_dir = os.path.join(path, jpg_dir_name)
@@ -234,7 +233,7 @@ class OrganizeCommand(BaseCommand):
                     all_files.append((dir_path, dir_name, f))
 
         if not all_files:
-            logger.info("  整理対象のファイルがありません")
+            logger.info("  " + _("整理対象のファイルがありません"))
             return
 
         dest_groups = {}
@@ -244,23 +243,23 @@ class OrganizeCommand(BaseCommand):
             dest_groups[dest_key] = dest_groups.get(dest_key, 0) + 1
 
         total = sum(dest_groups.values())
-        logger.info(f"  {total} 件のファイルを以下へ整理します:")
+        logger.info("  " + _("{total} 件のファイルを以下へ整理します:").format(total=total))
         for dest, count in sorted(dest_groups.items()):
-            logger.info(f"    {dest}/  ({count} 件)")
+            logger.info("    {}/  ({})".format(dest, _("({count} 件)").format(count=count)))
 
     def preview(self):
         self.dest_root = self._resolve_dest_root()
         hierarchy = _config.get("organize", {}).get("hierarchy", ["date"])
-        logger.info("[処理内容]")
-        dest_label = self.dest_root if self.dest_root else "(各ディレクトリ内・in-place)"
-        logger.info(f"  整理先: {dest_label}")
+        logger.info(_("[処理内容]"))
+        dest_label = self.dest_root if self.dest_root else _("(各ディレクトリ内・in-place)")
+        logger.info("  " + _("整理先: {dest_label}").format(dest_label=dest_label))
 
         if self.recursive:
             self.targets = find_organize_targets(os.getcwd())
             if not self.targets:
-                logger.info("  整理対象ディレクトリが見つかりませんでした")
+                logger.info("  " + _("整理対象ディレクトリが見つかりませんでした"))
                 return
-            logger.info(f"  対象ディレクトリ: {len(self.targets)} 件\n")
+            logger.info("  " + _("対象ディレクトリ: {n} 件\n").format(n=len(self.targets)))
             for t in self.targets:
                 rel = os.path.relpath(t, os.getcwd())
                 logger.info(f"  [{rel}]")
@@ -274,7 +273,7 @@ class OrganizeCommand(BaseCommand):
         if not self.targets:
             self.targets = [os.getcwd()] if not self.recursive else find_organize_targets(os.getcwd())
         if not self.targets:
-            logger.info("整理対象ディレクトリが見つかりませんでした")
+            logger.info(_("整理対象ディレクトリが見つかりませんでした"))
             sys.exit(0)
         for target in self.targets:
             iCon = dir_structure(path=target)
@@ -303,12 +302,12 @@ class DeleteCommand(BaseCommand):
         path = os.getcwd()
         jpg_dir = os.path.join(path, jpg_dir_name)
         raw_dir = os.path.join(path, raw_dir_name)
-        logger.info("[処理内容]")
+        logger.info(_("[処理内容]"))
         if not (os.path.isdir(jpg_dir) and os.path.isdir(raw_dir)):
-            logger.info(f"  ファイルを振り分けます")
-            logger.info(f"    JPG/現像済み → {os.path.join(path, jpg_dir_name)}/")
-            logger.info(f"    RAW          → {raw_dir}/")
-            logger.info(f"  振り分け後、孤立 RAW をゴミ箱に移動します")
+            logger.info("  " + _("ファイルを振り分けます"))
+            logger.info(_("    JPG/現像済み → {path}/").format(path=os.path.join(path, jpg_dir_name)))
+            logger.info(_("    RAW          → {path}/").format(path=raw_dir))
+            logger.info("  " + _("振り分け後、孤立 RAW をゴミ箱に移動します"))
             return
         iCon = imageContainer(path)
         orphan_files = _count_orphan_raws(iCon)
@@ -316,8 +315,8 @@ class DeleteCommand(BaseCommand):
         orphan_stems = {os.path.splitext(f)[0] for f in orphan_files}
         orphan_xmp = [f for f in os.listdir(raw_dir)
                       if f.endswith('.xmp') and os.path.splitext(f)[0] in orphan_stems]
-        xmp_note = f" (XMP サイドカー {len(orphan_xmp)} 件を含む)" if orphan_xmp else ""
-        logger.info(f"  孤立 RAW {len(orphan_files)} 件{xmp_note}をゴミ箱に移動します")
+        xmp_note = _(" (XMP サイドカー {n} 件を含む)").format(n=len(orphan_xmp)) if orphan_xmp else ""
+        logger.info("  " + _("孤立 RAW {n} 件{xmp_note}をゴミ箱に移動します").format(n=len(orphan_files), xmp_note=xmp_note))
         for f in orphan_files:
             logger.info(f"    {os.path.join(raw_dir, f)}")
 
@@ -334,20 +333,20 @@ class SyncCommand(BaseCommand):
         path = os.getcwd()
         jpg_dir = os.path.join(path, jpg_dir_name)
         raw_dir = os.path.join(path, raw_dir_name)
-        logger.info("[処理内容]")
+        logger.info(_("[処理内容]"))
         if not (os.path.isdir(jpg_dir) and os.path.isdir(raw_dir)):
-            logger.info(f"  ファイルを振り分けます")
-            logger.info(f"    JPG/現像済み → {jpg_dir}/")
-            logger.info(f"    RAW          → {raw_dir}/")
-            logger.info(f"  振り分け後、孤立 RAW 削除 + XMP 同期を行います")
+            logger.info("  " + _("ファイルを振り分けます"))
+            logger.info(_("    JPG/現像済み → {path}/").format(path=jpg_dir))
+            logger.info(_("    RAW          → {path}/").format(path=raw_dir))
+            logger.info("  " + _("振り分け後、孤立 RAW 削除 + XMP 同期を行います"))
             return
         iCon = imageContainer(path)
         orphan_files = _count_orphan_raws(iCon)
         orphan_stems = {os.path.splitext(f)[0] for f in orphan_files}
         orphan_xmp = [f for f in os.listdir(raw_dir)
                       if f.endswith('.xmp') and os.path.splitext(f)[0] in orphan_stems]
-        xmp_note = f" (XMP サイドカー {len(orphan_xmp)} 件を含む)" if orphan_xmp else ""
-        logger.info(f"  孤立 RAW {len(orphan_files)} 件{xmp_note}をゴミ箱に移動します")
+        xmp_note = _(" (XMP サイドカー {n} 件を含む)").format(n=len(orphan_xmp)) if orphan_xmp else ""
+        logger.info("  " + _("孤立 RAW {n} 件{xmp_note}をゴミ箱に移動します").format(n=len(orphan_files), xmp_note=xmp_note))
         for f in orphan_files:
             logger.info(f"    {os.path.join(raw_dir, f)}")
 
@@ -361,7 +360,7 @@ class SyncCommand(BaseCommand):
         with_meta = 0
         no_xmp = 0
         no_meta = 0
-        with make_bar(jpg_files, desc="XMPスキャン") as bar:
+        with make_bar(jpg_files, desc=_("XMPスキャン")) as bar:
             for fp in bar:
                 bar.set_postfix_str(os.path.basename(fp), refresh=False)
                 result = read_xmp_meta(fp, meta_target)
@@ -371,13 +370,13 @@ class SyncCommand(BaseCommand):
                     with_meta += 1
                 else:
                     no_meta += 1
-        logger.info(f"  JPG {len(jpg_files)} 件の XMP を {raw_dir}/ 配下の .xmp サイドカーへ同期します")
+        logger.info("  " + _("JPG {n} 件の XMP を {raw_dir}/ 配下の .xmp サイドカーへ同期します").format(n=len(jpg_files), raw_dir=raw_dir))
         if with_meta:
-            logger.info(f"    Rating/Label あり: {with_meta} 件")
+            logger.info("    " + _("Rating/Label あり: {n} 件").format(n=with_meta))
         if no_meta:
-            logger.info(f"    Rating/Label 未設定: {no_meta} 件")
+            logger.info("    " + _("Rating/Label 未設定: {n} 件").format(n=no_meta))
         if no_xmp:
-            logger.info(f"    XMP なし (未処理): {no_xmp} 件")
+            logger.info("    " + _("XMP なし (未処理): {n} 件").format(n=no_xmp))
 
     def setup(self):
         self.iCon = dir_structure()
@@ -397,22 +396,22 @@ class DefaultCommand(BaseCommand):
                  if os.path.isfile(os.path.join(path, f)) and not f.startswith('.')]
         loose_jpg = [f for f in files if os.path.splitext(f)[1].lstrip('.').lower() in target_jpg_extensions]
         loose_raw = [f for f in files if os.path.splitext(f)[1].lstrip('.').lower() in target_raw_extensions]
-        logger.info("[処理内容]")
+        logger.info(_("[処理内容]"))
         if loose_jpg:
             retouch_count = 0
-            with make_bar(loose_jpg, desc="JPGスキャン") as bar:
+            with make_bar(loose_jpg, desc=_("JPGスキャン")) as bar:
                 for f in bar:
                     bar.set_postfix_str(f, refresh=False)
                     if is_retouched(os.path.join(path, f)):
                         retouch_count += 1
             normal_count = len(loose_jpg) - retouch_count
-            logger.info(f"  JPG {len(loose_jpg)} 件を振り分けます")
+            logger.info("  " + _("JPG {n} 件を振り分けます").format(n=len(loose_jpg)))
             if normal_count:
-                logger.info(f"    通常    → {os.path.join(path, jpg_dir_name)}/  ({normal_count} 件)")
+                logger.info("    " + _("通常    → {path}/  ({n} 件)").format(path=os.path.join(path, jpg_dir_name), n=normal_count))
             if retouch_count:
-                logger.info(f"    現像済み → {os.path.join(path, retouch_dir_name)}/  ({retouch_count} 件)")
+                logger.info("    " + _("現像済み → {path}/  ({n} 件)").format(path=os.path.join(path, retouch_dir_name), n=retouch_count))
         if loose_raw:
-            logger.info(f"  RAW {len(loose_raw)} 件 → {os.path.join(path, raw_dir_name)}/")
+            logger.info("  " + _("RAW {n} 件 → {path}/").format(n=len(loose_raw), path=os.path.join(path, raw_dir_name)))
 
         if self.xmp:
             from imanage.xmp_handler import check_xmp_applied
@@ -429,7 +428,7 @@ class DefaultCommand(BaseCommand):
                     fp = os.path.join(dp, f)
                     if os.path.isfile(fp):
                         dir_jpg_files.append(fp)
-            with make_bar(dir_jpg_files, desc="XMP確認") as bar:
+            with make_bar(dir_jpg_files, desc=_("XMP確認")) as bar:
                 for fp in bar:
                     bar.set_postfix_str(os.path.basename(fp), refresh=False)
                     if check_xmp_applied(fp):
@@ -437,9 +436,9 @@ class DefaultCommand(BaseCommand):
                     else:
                         xmp_pending += 1
             if xmp_pending:
-                logger.info(f"  XMP 書き込み: {xmp_pending} 件")
+                logger.info("  " + _("XMP 書き込み: {n} 件").format(n=xmp_pending))
             if xmp_done:
-                logger.info(f"  XMP 処理済み: {xmp_done} 件 (スキップ)")
+                logger.info("  " + _("XMP 処理済み: {n} 件 (スキップ)").format(n=xmp_done))
 
     def setup(self):
         self.iCon = dir_structure()
@@ -460,7 +459,7 @@ class DefaultCommand(BaseCommand):
             if loose or not xmp_done:
                 self.iCon.imagev(write_xmp=True)
             else:
-                logger.info("既に処理済みです。スキップします。")
+                logger.info(_("既に処理済みです。スキップします。"))
         elif loose:
             self.iCon.imagev(write_xmp=False)
 
@@ -511,7 +510,7 @@ def _count_orphan_raws(iCon):
 
 
 def _print_preview(root: str, pair_dirs: list):
-    logger.info(f"\n対象ディレクトリ: {len(pair_dirs)} 件\n")
+    logger.info("\n" + _("対象ディレクトリ: {n} 件\n").format(n=len(pair_dirs)))
     total_orphan = 0
     total_jpg = 0
     total_raw = 0
@@ -521,19 +520,21 @@ def _print_preview(root: str, pair_dirs: list):
         raw_count = len([f for f in os.listdir(iCon.raw_dir_path) if f != ".DS_Store" and os.path.isfile(os.path.join(iCon.raw_dir_path, f))])
         orphan_files = _count_orphan_raws(iCon)
         rel = os.path.relpath(pair_dir, root)
-        line = f"  [{i}] {rel}\n      JPG: {jpg_count}  RAW: {raw_count}  孤立RAW: {len(orphan_files)}"
+        line = _("  [{i}] {rel}\n      JPG: {jpg}  RAW: {raw}  孤立RAW: {orphan}").format(
+            i=i, rel=rel, jpg=jpg_count, raw=raw_count, orphan=len(orphan_files))
         if orphan_files:
             line += "  → " + " ".join(orphan_files)
         logger.info(line)
         total_jpg += jpg_count
         total_raw += raw_count
         total_orphan += len(orphan_files)
-    logger.info(f"\n  合計 孤立RAW: {total_orphan} 件  XMP 同期対象: {total_jpg} 件\n")
+    logger.info(_("\n  合計 孤立RAW: {total_orphan} 件  XMP 同期対象: {total_jpg} 件\n").format(
+        total_orphan=total_orphan, total_jpg=total_jpg))
 
 
 def _print_meta_preview(root: str, pending: list, applied: list):
     total = len(pending) + len(applied)
-    logger.info(f"\nメタデータ未適用: {len(pending)} 件 / 全 {total} 件\n")
+    logger.info(_("\nメタデータ未適用: {pending} 件 / 全 {total} 件\n").format(pending=len(pending), total=total))
     for i, pair_dir in enumerate(pending, 1):
         iCon = imageContainer(pair_dir)
         jpg_count = len([
@@ -545,15 +546,15 @@ def _print_meta_preview(root: str, pending: list, applied: list):
             if f != ".DS_Store" and os.path.isfile(os.path.join(iCon.raw_dir_path, f))
         ]) if os.path.isdir(iCon.raw_dir_path) else 0
         rel = os.path.relpath(pair_dir, root)
-        logger.info(f"  [{i}] {rel}  JPG: {jpg_count}  RAW: {raw_count}")
+        logger.info(_("  [{i}] {rel}  JPG: {jpg}  RAW: {raw}").format(i=i, rel=rel, jpg=jpg_count, raw=raw_count))
     if applied:
-        logger.info(f"\n適用済み (スキップ): {len(applied)} 件")
+        logger.info(_("\n適用済み (スキップ): {n} 件").format(n=len(applied)))
     logger.info("")
 
 
 def _select_dirs(pending: list) -> list:
     while True:
-        ans = input("適用するディレクトリ番号を入力 (例: 1 2 3 / all / q): ").strip().lower()
+        ans = input(_("適用するディレクトリ番号を入力 (例: 1 2 3 / all / q): ")).strip().lower()
         if ans == 'q':
             return []
         if ans == 'all':
@@ -565,7 +566,7 @@ def _select_dirs(pending: list) -> list:
                 return selected
         except ValueError:
             pass
-        print("入力が正しくありません。再入力してください。")
+        print(_("入力が正しくありません。再入力してください。"))
 
 
 class MetaCommand(BaseCommand):
@@ -584,15 +585,15 @@ class MetaCommand(BaseCommand):
             raw_count = sum(1 for f in os.listdir(iCon.raw_dir_path)
                             if f != ".DS_Store" and os.path.isfile(os.path.join(iCon.raw_dir_path, f))) \
                 if os.path.isdir(iCon.raw_dir_path) else 0
-            logger.info("[処理内容]")
-            logger.info(f"  JPG {jpg_count} 件 ({iCon.jpg_dir_path}/) の XMP を")
-            logger.info(f"  RAW {raw_count} 件 ({iCon.raw_dir_path}/) の .xmp サイドカーへ書き込みます")
+            logger.info(_("[処理内容]"))
+            logger.info("  " + _("JPG {n} 件 ({path}/) の XMP を").format(n=jpg_count, path=iCon.jpg_dir_path))
+            logger.info("  " + _("RAW {n} 件 ({path}/) の .xmp サイドカーへ書き込みます").format(n=raw_count, path=iCon.raw_dir_path))
         else:
             self._preview_mode = "batch"
             self._root = cwd
             self._pair_dirs = find_pair_dirs(cwd)
             if not self._pair_dirs:
-                logger.info("[処理内容] jpg/raw 構造を持つディレクトリが見つかりませんでした")
+                logger.info(_("[処理内容] jpg/raw 構造を持つディレクトリが見つかりませんでした"))
                 return
             from imanage.xmp_handler import is_already_applied
             self._pending = []
@@ -622,7 +623,7 @@ class MetaCommand(BaseCommand):
             # preview() でキャッシュ済みなら再計算しない
             self.pair_dirs = getattr(self, '_pair_dirs', None) or find_pair_dirs(cwd)
             if not self.pair_dirs:
-                logger.info("jpg/raw 構造を持つディレクトリが見つかりませんでした")
+                logger.info(_("jpg/raw 構造を持つディレクトリが見つかりませんでした"))
                 sys.exit(0)
 
     def execute(self):
@@ -662,7 +663,7 @@ class MetaCommand(BaseCommand):
             _print_meta_preview(self.root, pending, applied)
 
         if not pending:
-            logger.info("すべてのディレクトリに既にメタデータが適用されています")
+            logger.info(_("すべてのディレクトリに既にメタデータが適用されています"))
             return
 
         if self.yes:
@@ -670,10 +671,10 @@ class MetaCommand(BaseCommand):
         else:
             selected = _select_dirs(pending)
         if not selected:
-            print("中止しました")
+            print(_("中止しました"))
             return
 
-        with make_bar(selected, desc="メタデータ適用", unit="dir") as bar:
+        with make_bar(selected, desc=_("メタデータ適用"), unit="dir") as bar:
             for pair_dir in bar:
                 bar.set_postfix_str(os.path.basename(pair_dir), refresh=False)
                 iCon = imageContainer(pair_dir)
@@ -694,7 +695,7 @@ class RecursiveCommand(BaseCommand):
         if self.pair_dirs is None:
             self.pair_dirs = find_pair_dirs(self.root)
         if not self.pair_dirs:
-            logger.info("[処理内容] jpg/raw 構造を持つディレクトリが見つかりませんでした")
+            logger.info(_("[処理内容] jpg/raw 構造を持つディレクトリが見つかりませんでした"))
             return
         _print_preview(self.root, self.pair_dirs)
 
@@ -702,11 +703,11 @@ class RecursiveCommand(BaseCommand):
         if self.pair_dirs is None:
             self.pair_dirs = find_pair_dirs(self.root)
         if not self.pair_dirs:
-            logger.info("jpg/raw 構造を持つディレクトリが見つかりませんでした")
+            logger.info(_("jpg/raw 構造を持つディレクトリが見つかりませんでした"))
             sys.exit(0)
 
     def execute(self):
-        with make_bar(self.pair_dirs, desc="ディレクトリ処理", unit="dir") as bar:
+        with make_bar(self.pair_dirs, desc=_("ディレクトリ処理"), unit="dir") as bar:
             for pair_dir in bar:
                 bar.set_postfix_str(os.path.basename(pair_dir), refresh=False)
                 iCon = imageContainer(pair_dir)
@@ -735,11 +736,11 @@ class RestoreRawDatetimeCommand(BaseCommand):
         if self.pair_dirs is None:
             self.pair_dirs = find_pair_dirs(self.root)
         if not self.pair_dirs:
-            logger.info("[処理内容] jpg/raw 構造を持つディレクトリが見つかりませんでした")
+            logger.info(_("[処理内容] jpg/raw 構造を持つディレクトリが見つかりませんでした"))
             return
         from imanage.xmp_handler import find_jpg_raw_pairs
         total = 0
-        logger.info(f"\n[RAW から DateTimeOriginal を復元]\n対象ディレクトリ: {len(self.pair_dirs)} 件\n")
+        logger.info(_("\n[RAW から DateTimeOriginal を復元]\n対象ディレクトリ: {n} 件\n").format(n=len(self.pair_dirs)))
         for i, pair_dir in enumerate(self.pair_dirs, 1):
             iCon = imageContainer(pair_dir)
             pairs = find_jpg_raw_pairs(
@@ -747,15 +748,15 @@ class RestoreRawDatetimeCommand(BaseCommand):
                 target_jpg_extensions, target_raw_extensions,
             )
             rel = os.path.relpath(pair_dir, self.root)
-            logger.info(f"  [{i}] {rel}  JPG-RAW ペア: {len(pairs)} 件")
+            logger.info("  [{}] {}  ".format(i, rel) + _("JPG-RAW ペア: {n} 件").format(n=len(pairs)))
             total += len(pairs)
-        logger.info(f"\n  合計: {total} 件の JPG を復元対象とします\n")
+        logger.info(_("\n  合計: {total} 件の JPG を復元対象とします\n").format(total=total))
 
     def setup(self):
         if self.pair_dirs is None:
             self.pair_dirs = find_pair_dirs(self.root)
         if not self.pair_dirs:
-            logger.info("jpg/raw 構造を持つディレクトリが見つかりませんでした")
+            logger.info(_("jpg/raw 構造を持つディレクトリが見つかりませんでした"))
             sys.exit(0)
 
     def execute(self):
@@ -763,19 +764,19 @@ class RestoreRawDatetimeCommand(BaseCommand):
         from concurrent.futures import ThreadPoolExecutor, as_completed as _as_completed
         all_pairs = self._collect_pairs()
         if not all_pairs:
-            logger.info("復元対象のペアが見つかりませんでした")
+            logger.info(_("復元対象のペアが見つかりませんでした"))
             return
         with ThreadPoolExecutor() as executor:
             futures = {executor.submit(restore_datetime_from_raw, jpg, raw): jpg
                        for jpg, raw in all_pairs}
-            with make_bar(_as_completed(futures), total=len(futures), desc="DateTimeOriginal 復元") as bar:
+            with make_bar(_as_completed(futures), total=len(futures), desc=_("DateTimeOriginal 復元")) as bar:
                 for future in bar:
                     jpg = futures[future]
                     bar.set_postfix_str(os.path.basename(jpg), refresh=False)
                     try:
                         future.result()
                     except Exception as e:
-                        logger.error(f"復元エラー ({os.path.basename(jpg)}): {e}")
+                        logger.error(_("復元エラー ({name}): {e}").format(name=os.path.basename(jpg), e=e))
 
 
 def resolve_command(args):
@@ -813,30 +814,30 @@ def main():
     target_raw_extensions = set(_config["target_raw_extensions"])
     meta_target           = _config.get("meta_target", ["Rating", "Label"])
 
-    parser = argparse.ArgumentParser(description='Photographer Tool')
-    parser.add_argument('-d', '--delete', action="store_true", help="jpg ディレクトリに存在しない raw ファイルを削除する")
-    parser.add_argument('-s', '--sync', action="store_true", help="jpg の XMP メタデータを同名 raw ファイルに同期する")
-    parser.add_argument('-l', '--link', action="store_true", help="(未使用)")
-    parser.add_argument('-o', '--organize', action="store_true", help="jpg/raw を作成日時ごとの日付フォルダ (YYYYMMDD/jpg, YYYYMMDD/raw) に仕分ける")
-    parser.add_argument('-R', '--recursive', metavar='PATH', nargs='?', const='.', help="PATH 配下の jpg/raw 構造を持つすべてのディレクトリに -s を適用する")
-    parser.add_argument('-RRR', '--restore-raw-datetime', metavar='PATH', nargs='?', const='.', help="ペアの RAW から DateTimeOriginal/Digitized を JPG EXIF に復元する（2026-04-25 以前に imanage を適用したファイルの修復用）")
-    parser.add_argument('-q', '--quiet', action='store_true', help="エラーのみ出力する（スクリプト用）")
-    parser.add_argument('-v', '--verbose', action='store_true', help="ファイル単位の処理詳細も表示する")
+    parser = argparse.ArgumentParser(description=_("Photographer Tool"))
+    parser.add_argument('-d', '--delete', action="store_true", help=_("jpg ディレクトリに存在しない raw ファイルを削除する"))
+    parser.add_argument('-s', '--sync', action="store_true", help=_("jpg の XMP メタデータを同名 raw ファイルに同期する"))
+    parser.add_argument('-l', '--link', action="store_true", help=_("(未使用)"))
+    parser.add_argument('-o', '--organize', action="store_true", help=_("jpg/raw を作成日時ごとの日付フォルダ (YYYYMMDD/jpg, YYYYMMDD/raw) に仕分ける"))
+    parser.add_argument('-R', '--recursive', metavar='PATH', nargs='?', const='.', help=_("PATH 配下の jpg/raw 構造を持つすべてのディレクトリに -s を適用する"))
+    parser.add_argument('-RRR', '--restore-raw-datetime', metavar='PATH', nargs='?', const='.', help=_("ペアの RAW から DateTimeOriginal/Digitized を JPG EXIF に復元する（2026-04-25 以前に imanage を適用したファイルの修復用）"))
+    parser.add_argument('-q', '--quiet', action='store_true', help=_("エラーのみ出力する（スクリプト用）"))
+    parser.add_argument('-v', '--verbose', action='store_true', help=_("ファイル単位の処理詳細も表示する"))
     parser.add_argument('--log-file', metavar='PATH', nargs='?',
                         const=os.path.expanduser("~/.local/state/imanage/imanage.log"),
-                        help="ログをファイルに出力する（PATH 省略時: ~/.local/state/imanage/imanage.log）")
+                        help=_("ログをファイルに出力する（PATH 省略時: ~/.local/state/imanage/imanage.log）"))
     parser.add_argument('-O', dest='organize_dest', metavar='DEST', nargs='?', const='', default=None,
-                        help="config の destination 配下に整理する（DEST 指定で上書き）")
+                        help=_("config の destination 配下に整理する（DEST 指定で上書き）"))
     parser.add_argument('-OOO', dest='organize_dest_recursive', metavar='DEST', nargs='?', const='', default=None,
-                        help="cwd 配下を再帰的に destination 配下へ整理する（DEST 指定で上書き）")
+                        help=_("cwd 配下を再帰的に destination 配下へ整理する（DEST 指定で上書き）"))
     parser.add_argument('-ooo', dest='organize_inplace_recursive', action='store_true',
-                        help="cwd 配下を再帰的に各ディレクトリ内で整理する（in-place。初回の取り込み時に使用を推奨）")
-    parser.add_argument('-m', '--meta', action='store_true', help="メタデータが未適用のファイルに XMP を書き込む")
-    parser.add_argument('--xmp', action='store_true', help="XMP メタデータを書き込む（デフォルトは無効）")
+                        help=_("cwd 配下を再帰的に各ディレクトリ内で整理する（in-place。初回の取り込み時に使用を推奨）"))
+    parser.add_argument('-m', '--meta', action='store_true', help=_("メタデータが未適用のファイルに XMP を書き込む"))
+    parser.add_argument('--xmp', action='store_true', help=_("XMP メタデータを書き込む（デフォルトは無効）"))
     parser.add_argument('--xmp-pair', choices=['raw', 'jpg'], default=None,
-                        help="XMP サイドカーを raw/ と jpg/ のどちらに振り分けるか（config を上書き、デフォルト: raw）")
-    parser.add_argument('--undo', action='store_true', help="直前の操作を取り消す")
-    parser.add_argument('-y', '--yes', action='store_true', help="確認プロンプトをスキップして即実行する")
+                        help=_("XMP サイドカーを raw/ と jpg/ のどちらに振り分けるか（config を上書き、デフォルト: raw）"))
+    parser.add_argument('--undo', action='store_true', help=_("直前の操作を取り消す"))
+    parser.add_argument('-y', '--yes', action='store_true', help=_("確認プロンプトをスキップして即実行する"))
     args = parser.parse_args()
     if args.xmp_pair is not None:
         _config.setdefault("organize", {})["xmp_pair"] = args.xmp_pair
@@ -856,9 +857,9 @@ def main():
         cmd.xmp = args.xmp
     cmd.preview()
     if not args.yes and cmd.needs_global_confirm:
-        answer = input("\n続行しますか？ [y/N]: ").strip().lower()
+        answer = input(_("\n続行しますか？ [y/N]: ")).strip().lower()
         if answer != 'y':
-            print("中止しました")
+            print(_("中止しました"))
             return
 
     _journal.init_journal()
@@ -866,7 +867,7 @@ def main():
     cmd.execute()
     cmd.teardown()
     _journal.get_journal().save()
-    logger.info("\nやり直したい場合は: imanage --undo")
+    logger.info(_("\nやり直したい場合は: imanage --undo"))
 
 
 def _has_target_files(dir_path):
@@ -895,7 +896,7 @@ def dir_structure(path: str | None = None):
     ]):
         if explicit_path:
             return None
-        logger.info("対象ファイルが見つかりません。処理をスキップします。")
+        logger.info(_("対象ファイルが見つかりません。処理をスキップします。"))
         sys.exit(0)
 
     current_dirs = {_file for _file in os.listdir(path) if os.path.isdir(os.path.join(path, _file))}
@@ -912,7 +913,7 @@ def dir_structure(path: str | None = None):
         iCon = imageContainer(path)
         skipped = []
         files = list(os.listdir(path))
-        with make_bar(files, desc="ファイル振り分け") as bar:
+        with make_bar(files, desc=_("ファイル振り分け")) as bar:
             for _file in bar:
                 bar.set_postfix_str(_file, refresh=False)
                 stem = os.path.splitext(_file)[0]
@@ -939,11 +940,11 @@ def dir_structure(path: str | None = None):
                     else:
                         skipped.append(file_path)
                 elif os.path.isfile(file_path) and not _file.startswith("."):
-                    logger.warning(f"スキップ: {_file} は処理されません（対象外の拡張子）")
+                    logger.warning(_("スキップ: {name} は処理されません（対象外の拡張子）").format(name=_file))
         if skipped:
-            logger.warning(f"\n移動スキップ（移動先に同名ファイルが存在）: {len(skipped)} 件")
+            logger.warning(_("\n移動スキップ（移動先に同名ファイルが存在）: {n} 件").format(n=len(skipped)))
             for f in skipped:
-                logger.warning(f"  {f}")
+                logger.warning("  {}".format(f))
     return iCon
 
 
@@ -962,7 +963,7 @@ class imageContainer:
         skipped = []
         j = _journal.get_journal()
         files = list(os.listdir(self.base_dir))
-        with make_bar(files, desc="ファイル振り分け") as bar:
+        with make_bar(files, desc=_("ファイル振り分け")) as bar:
             for _file in bar:
                 bar.set_postfix_str(_file, refresh=False)
                 stem = os.path.splitext(_file)[0]
@@ -989,7 +990,7 @@ class imageContainer:
                     else:
                         skipped.append(file_path)
                 elif os.path.isfile(file_path) and not _file.startswith("."):
-                    logger.warning(f"スキップ: {_file} は処理されません（対象外の拡張子）")
+                    logger.warning(_("スキップ: {name} は処理されません（対象外の拡張子）").format(name=_file))
         if write_xmp:
             from imanage.xmp_handler import write_exif_to_xmp
             write_exif_to_xmp(
@@ -999,9 +1000,9 @@ class imageContainer:
                 target_raw_extensions,
             )
         if skipped:
-            logger.warning(f"\n移動スキップ（移動先に同名ファイルが存在）: {len(skipped)} 件")
+            logger.warning(_("\n移動スキップ（移動先に同名ファイルが存在）: {n} 件").format(n=len(skipped)))
             for f in skipped:
-                logger.warning(f"  {f}")
+                logger.warning("  {}".format(f))
 
     def date_organize(self, config, exif_cache=None, dest_root: str | None = None):
         hierarchy = config.get("organize", {}).get("hierarchy", ["date"])
@@ -1024,7 +1025,7 @@ class imageContainer:
                 if os.path.isfile(os.path.join(dir_path, _file)):
                     all_files.append((dir_path, dir_name, _file))
 
-        with make_bar(all_files, desc="ファイル移動") as bar:
+        with make_bar(all_files, desc=_("ファイル移動")) as bar:
             for dir_path, dir_name, _file in bar:
                 bar.set_postfix_str(_file, refresh=False)
                 file_path = os.path.join(dir_path, _file)
@@ -1047,9 +1048,9 @@ class imageContainer:
                     skipped.append(file_path)
 
         if skipped:
-            logger.warning(f"\n移動スキップ（移動先に同名ファイルが存在）: {len(skipped)} 件")
+            logger.warning(_("\n移動スキップ（移動先に同名ファイルが存在）: {n} 件").format(n=len(skipped)))
             for f in skipped:
-                logger.warning(f"  {f}")
+                logger.warning("  {}".format(f))
 
     """
     jpg_dir_path に存在しない同名ファイルを raw_dir_path から削除する
@@ -1070,7 +1071,7 @@ class imageContainer:
         to_delete = [(d, f) for d in sorted(diff) for f in raw_files_by_stem[d]]
         if to_delete:
             j = _journal.get_journal()
-            with make_bar(to_delete, desc="孤立RAW削除") as bar:
+            with make_bar(to_delete, desc=_("孤立RAW削除")) as bar:
                 for d, f in bar:
                     bar.set_postfix_str(f, refresh=False)
                     target_file_path = os.path.join(self.raw_dir_path, f)

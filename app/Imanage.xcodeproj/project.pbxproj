@@ -192,7 +192,7 @@
 				};
 			};
 			buildConfigurationList = 929259CC33617DFAA96647B3 /* Build configuration list for PBXProject "Imanage" */;
-			developmentRegion = en;
+			developmentRegion = ja;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
