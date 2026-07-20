@@ -74,7 +74,7 @@ targets:
           - ja
           - en
         CFBundleIdentifier: com.itotsum.imanage
-        CFBundleVersion: "1"
+        CFBundleVersion: "2"
         CFBundleShortVersionString: "0.1.0"
         NSHumanReadableDescription: "EXIF-based photo file organizer"
         NSHumanReadableCopyright: "Copyright © 2026 hoge128 (Tsuyoshi Ito). All rights reserved."
