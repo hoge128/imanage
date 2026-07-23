@@ -1,5 +1,39 @@
 # imanage 開発ポリシー
 
+## 公開リポジトリポリシー
+
+**このリポジトリは GitHub の公開リポジトリである。以下に該当するものは絶対にコミットしてはならない。**
+
+### パブリックにしてはいけないもの（列挙）
+
+| 分類 | 具体例 | 正しい置き場 |
+|---|---|---|
+| 秘密鍵・API キー | App Store Connect API キー（`AuthKey_*.p8`）、署名鍵、トークン類 | リポジトリ外（`~/.appstoreconnect/` 等）+ 1Password |
+| パスワード・認証情報 | アプリ用パスワード、環境変数に入れる類の値 | 1Password / 環境変数 |
+| 個人連絡先 | メールアドレス、電話番号、住所 | ASC へ直接入力、またはローカル専用ファイル（`.gitignore` 済みの `fastlane/metadata/review_information/email_address.txt` 等） |
+| 個人メモ | `knowledge/` などの私的なノート | 未追跡のまま、または私用メモリポジトリ（プライベート） |
+| 顧客・ユーザーの写真データ | テスト用に借りた実写真など | リポジトリに入れない。テストは自作素材（EXIF を exiftool で付与）を使う |
+| ローカル環境の情報 | 絶対パス入りの設定、`*.local` 系設定ファイル | `.gitignore` する |
+
+既に `.gitignore` 済みのもの（`fastlane/.gitignore`: `*.p8`、`email_address.txt`）を
+解除・迂回してはならない。
+
+### git add 時の注意
+
+- **`git add .` / `git add -A` を安易に使わない。** 必ず対象を明示するか、
+  `git status` で新規ファイルを 1 つずつ確認してからステージする
+- コミット前に以下を実行し、個人情報・鍵の混入がないか確認する:
+
+```bash
+# ステージ内容の最終確認（新規ファイル一覧と中身）
+git diff --cached --name-only
+git diff --cached | grep -iE "gmail|@.*\.(com|jp)|BEGIN.*PRIVATE KEY|AuthKey|password" || echo OK
+```
+
+- 見慣れない新規ファイル（ユーザーが手で置いたスクショ素材・書類等）を巻き込む場合は、
+  中身と公開可否を確認してからコミットする
+- 一度 push した秘匿情報は履歴から消えない前提で扱う（漏れたら鍵のローテーションが必要）
+
 ## ファイル削除ポリシー
 
 **`rm` コマンドおよび `os.remove()` / `shutil.rmtree()` 等による完全削除は絶対に使用してはならない。**
